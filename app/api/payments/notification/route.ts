@@ -113,12 +113,29 @@ export async function POST(req: NextRequest) {
 
       await invalidateQuotaCache()
     } else {
-      // Update ongoing state (e.g. pending VA)
+      // Update ongoing state (e.g. pending VA / Echannel / QRIS)
+      let detectedBank = payload.bank || payload.va_numbers?.[0]?.bank || null
+      let detectedVaNumber = payload.va_numbers?.[0]?.va_number || null
+      let detectedBillerCode = payload.biller_code || null
+      let detectedBillKey = payload.bill_key || null
+
+      if (payload.permata_va_number) {
+        detectedBank = 'PERMATA'
+        detectedVaNumber = payload.permata_va_number
+      } else if (payload.payment_type === 'echannel' && payload.bill_key) {
+        detectedBank = 'MANDIRI'
+        detectedVaNumber = payload.biller_code
+          ? `${payload.biller_code} - ${payload.bill_key}`
+          : payload.bill_key
+      }
+
       await updateRegistrationPaymentData(order_id, {
         transactionId: transaction_id,
         paymentType: payment_type,
-        bank: payload.bank || payload.va_numbers?.[0]?.bank || null,
-        vaNumber: payload.va_numbers?.[0]?.va_number || null,
+        bank: detectedBank,
+        vaNumber: detectedVaNumber,
+        billerCode: detectedBillerCode,
+        billKey: detectedBillKey,
         status: transaction_status,
         fraudStatus: fraud_status || null,
         midtransResponse: payload,

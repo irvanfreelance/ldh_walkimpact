@@ -351,13 +351,40 @@ export default function RegistrationsPage() {
                           })}
                         </td>
                         <td className="px-5 py-4 text-right">
-                          <Link
-                            href={`/panel/registrations/${r.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-[#6DC230]/20 hover:text-[#3A7D0A] text-gray-800 transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Detail</span>
-                          </Link>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {r.status === 'pending' && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Tandai LUNAS manual untuk ${r.registration_number} (${formatRupiah(Number(r.total_amount))})? Nomor BIB akan otomatis di-generate.`)) {
+                                    return
+                                  }
+                                  try {
+                                    const res = await fetch(`/api/panel/registrations/${r.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: 'paid' }),
+                                    })
+                                    if (!res.ok) throw new Error('Gagal update status')
+                                    fetchRegistrations()
+                                  } catch (err: any) {
+                                    alert(err.message || 'Gagal mengubah status')
+                                  }
+                                }}
+                                title="Set LUNAS Manual (Verifikasi Transfer)"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 transition-colors cursor-pointer border border-emerald-200"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Set Lunas</span>
+                              </button>
+                            )}
+                            <Link
+                              href={`/panel/registrations/${r.id}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-[#6DC230]/20 hover:text-[#3A7D0A] text-gray-800 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Detail</span>
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))

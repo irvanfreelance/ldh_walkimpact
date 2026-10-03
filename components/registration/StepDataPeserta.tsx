@@ -74,8 +74,9 @@ export function StepDataPeserta({
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold">
-          {error}
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-2">
+          <span>⚠️</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -92,11 +93,19 @@ export function StepDataPeserta({
             type="text"
             required
             value={formData.contactName}
-            onChange={(e) => onChange({ contactName: e.target.value })}
+            onChange={(e) => {
+              // Only allow letters, spaces, apostrophes, and dots
+              const val = e.target.value.replace(/[^a-zA-Z\s'.]/g, '')
+              onChange({ contactName: val })
+            }}
             placeholder="Contoh: Ahmad Fauzan"
+            maxLength={100}
             className="w-full pl-11 pr-4 py-3 bg-white border border-brand-light-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
           />
         </div>
+        <p className="text-[11px] text-brand-text-muted">
+          Hanya huruf, spasi, titik, dan petik (min 3 karakter).
+        </p>
       </div>
 
       {/* 2. Nomor WhatsApp */}
@@ -118,13 +127,18 @@ export function StepDataPeserta({
             type="tel"
             required
             value={formData.contactWhatsapp}
-            onChange={(e) => onChange({ contactWhatsapp: e.target.value })}
-            placeholder="Contoh: 0812 3456 7890"
-            className="w-full pl-11 pr-4 py-3 bg-white border border-brand-light-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
+            onChange={(e) => {
+              // Only allow digits and leading plus
+              const val = e.target.value.replace(/[^\d+]/g, '')
+              onChange({ contactWhatsapp: val })
+            }}
+            placeholder="Contoh: 081234567890"
+            maxLength={16}
+            className="w-full pl-11 pr-4 py-3 bg-white border border-brand-light-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all font-mono"
           />
         </div>
         <p className="text-[11px] text-brand-text-muted">
-          Nomor aktif untuk konfirmasi tiket dan info pengambilan perlengkapan.
+          Format: 08xxx / 628xxx (10-15 digit angka). Nomor aktif untuk notifikasi tiket.
         </p>
       </div>
 
@@ -227,8 +241,13 @@ export function StepDataPeserta({
           <input
             type="text"
             value={formData.communityName}
-            onChange={(e) => onChange({ communityName: e.target.value })}
+            onChange={(e) => {
+              // Strip harmful characters, allow alphanumerics, spaces, dots, dashes, parentheses
+              const val = e.target.value.replace(/[^a-zA-Z0-9\s.,&()\-]/g, '')
+              onChange({ communityName: val })
+            }}
             placeholder="Contoh: Komunitas Sehat Bandung"
+            maxLength={100}
             className="w-full pl-11 pr-4 py-3 bg-white border border-brand-light-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
           />
         </div>

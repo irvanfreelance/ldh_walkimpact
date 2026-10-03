@@ -32,6 +32,17 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
   if (orderId) {
     registration = await getRegistrationByNumber(orderId)
 
+    // If order is pending, sync with Midtrans to fetch VA Number, Bill Key, or Settlement status
+    if (registration && registration.status === 'pending' && !isDemo) {
+      try {
+        const { syncMidtransTransactionStatus } = await import('@/lib/midtrans/sync-status')
+        await syncMidtransTransactionStatus(orderId)
+        registration = await getRegistrationByNumber(orderId)
+      } catch (syncErr) {
+        console.warn('Error syncing Midtrans status:', syncErr)
+      }
+    }
+
     // Only in explicit demo simulation mode, auto mark paid
     if (registration && isDemo && registration.status === 'pending') {
       await markRegistrationPaid(registration.id, new Date())
@@ -102,25 +113,17 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
       {/* Background illustration overlay */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <Image
-          src="/images/background-registration-success.png"
-          alt="Atmosphere Background"
-          fill
-          className="object-cover object-top opacity-20"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-off-white/70 via-brand-off-white/90 to-brand-off-white" />
-      </div>
-      <div className="absolute top-0 right-0 w-96 h-96 opacity-10 pointer-events-none -mr-20 -mt-20 z-0">
-        <Image
           src="/images/runner.png"
           alt="Runner Atmosphere"
-          width={400}
-          height={400}
-          className="w-full h-full object-contain"
+          fill
+          priority
+          className="object-cover object-top opacity-15"
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-off-white/80 via-brand-off-white/95 to-brand-off-white" />
       </div>
 
       {/* Top Header */}
-      <header className="bg-white border-b border-brand-light-gray py-4 relative z-10">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-brand-light-gray py-4 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
@@ -133,21 +136,28 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
             />
           </Link>
 
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-5">
             <Image
               src="/images/logo-laz-darul-hikam.png"
               alt="LAZ Darul Hikam"
               width={75}
               height={30}
-              className="h-7 w-auto object-contain"
+              className="h-7 w-auto object-contain hidden xs:block"
             />
             <a
-              href="https://wa.me/6281572225545?text=Halo%20Admin%20Walk%20Impact,%20saya%20butuh%20bantuan%20terkait%20konfirmasi%20tiket"
+              href="https://wa.me/6281572225545?text=Halo%20Admin%20Walk%20Impact,%20saya%20butuh%20bantuan%20terkait%20konfirmasi%20tiket%20dan%20pembayaran"
               target="_blank"
               rel="noreferrer"
-              className="text-xs sm:text-sm font-bold text-brand-text-dark hover:text-brand-green flex items-center gap-1.5 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 text-xs sm:text-sm font-bold transition-all shadow-xs"
             >
-              <span>? Butuh Bantuan?</span>
+              <Image
+                src="/images/icon-whatsapp.png"
+                alt="WhatsApp"
+                width={18}
+                height={18}
+                className="w-4 h-4 object-contain"
+              />
+              <span>Bantuan &amp; Layanan CS</span>
             </a>
           </div>
         </div>
@@ -161,11 +171,12 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
           status={currentRegistration.status}
         />
 
-        {/* Pending Payment Instructions (VA / QRIS / Payment Link) */}
+        {/* Pending Payment Instructions (VA / QRIS / Payment Link / Manual Transfer) */}
         {currentRegistration.status !== 'paid' && (
           <PaymentInstructionsCard
             registrationNumber={currentRegistration.registration_number}
             totalAmount={currentRegistration.total_amount}
+            adminFee={Number(currentRegistration.admin_fee || 0)}
             status={currentRegistration.status}
             paymentType={currentRegistration.payment_type}
             paymentMethodCode={currentRegistration.payment_method_code}
@@ -179,7 +190,10 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
         )}
 
         {/* Registration Number display with Copy & Download */}
-        <RegistrationCard registrationNumber={currentRegistration.registration_number} />
+        <RegistrationCard
+          registrationNumber={currentRegistration.registration_number}
+          status={currentRegistration.status}
+        />
 
         {/* 2 Summary Cards (Ringkasan Peserta & Detail Acara) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

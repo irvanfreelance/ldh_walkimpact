@@ -219,20 +219,55 @@ export default function RegistrationDetailPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {status !== 'paid' && (
+            <button
+              onClick={async () => {
+                if (!confirm(`Konfirmasi pelunasan transfer manual untuk ${data.registration_number} sebesar ${formatRupiah(Number(data.total_amount))}? Nomor BIB peserta akan otomatis digenerate.`)) {
+                  return
+                }
+                try {
+                  setSaving(true)
+                  const res = await fetch(`/api/panel/registrations/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      status: 'paid',
+                    }),
+                  })
+                  const json = await res.json()
+                  if (!res.ok) throw new Error(json.error || 'Gagal mengubah status menjadi Lunas')
+                  setStatus('paid')
+                  setToast({ show: true, message: 'Berhasil set LUNAS manual! BIB otomatis dibuat.', type: 'success' })
+                  fetchDetail()
+                } catch (err: any) {
+                  setToast({ show: true, message: err.message || 'Gagal mengubah status', type: 'error' })
+                } finally {
+                  setSaving(false)
+                  setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3500)
+                }
+              }}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Set LUNAS (Manual Transfer)</span>
+            </button>
+          )}
+
           <a
             href={waUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold shadow-xs transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-4 h-4 text-emerald-600" />
             <span>Chat WhatsApp</span>
           </a>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-4 h-4" />
             <span>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
@@ -240,7 +275,7 @@ export default function RegistrationDetailPage({
           <button
             onClick={handleDelete}
             title="Hapus Registrasi"
-            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
+            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
           </button>

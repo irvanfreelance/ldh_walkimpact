@@ -14,22 +14,36 @@ import { invalidateQuotaCache } from '@/lib/cache/redis'
 import { rateLimit } from '@/lib/utils/rate-limit'
 
 const ParticipantItemSchema = z.object({
-  slotNumber: z.number().int().positive(),
+  slotNumber: z.coerce.number().int().positive(),
   name: z.string().optional().nullable(),
   gender: z.string().optional().nullable(),
-  shirtSizeId: z.number().int().positive(),
+  shirtSizeId: z.coerce.number().int().positive(),
 })
 
 const BodySchema = z.object({
-  contactName: z.string().min(3, 'Nama minimal 3 karakter').max(255),
-  contactEmail: z.string().email('Format email tidak valid').optional().nullable(),
-  contactWhatsapp: z.string().regex(/^(08|628|\+628)\d{8,13}$/, 'Format WhatsApp tidak valid (contoh: 08123456789)'),
-  categoryId: z.number().int().positive('Pilih kategori peserta'),
-  ticketQty: z.number().int().min(1).max(5),
-  shirtSizeIds: z.array(z.number().int().positive()).optional(),
+  contactName: z
+    .string()
+    .trim()
+    .min(3, 'Nama lengkap minimal 3 karakter')
+    .max(100, 'Nama lengkap maksimal 100 karakter')
+    .regex(/^[a-zA-Z\s'.]{3,100}$/, 'Nama hanya boleh berupa huruf, spasi, titik, atau petik'),
+  contactEmail: z.string().trim().email('Format email tidak valid').optional().nullable(),
+  contactWhatsapp: z
+    .string()
+    .trim()
+    .regex(/^(?:08|\+628|628)[1-9][0-9]{7,12}$/, 'Format nomor WhatsApp tidak valid (contoh: 08123456789)'),
+  categoryId: z.coerce.number().int().positive('Pilih kategori peserta'),
+  ticketQty: z.coerce.number().int().min(1, 'Jumlah tiket minimal 1').max(5, 'Jumlah tiket maksimal 5'),
+  shirtSizeIds: z.array(z.coerce.number().int().positive()).optional(),
   participants: z.array(ParticipantItemSchema).optional(),
-  communityName: z.string().max(255).optional().nullable(),
-  paymentMethodId: z.number().int().positive().optional().nullable(),
+  communityName: z
+    .string()
+    .trim()
+    .max(100, 'Nama komunitas maksimal 100 karakter')
+    .regex(/^[a-zA-Z0-9\s.,&()\-]{0,100}$/, 'Format nama komunitas tidak valid')
+    .optional()
+    .nullable(),
+  paymentMethodId: z.coerce.number().int().positive().optional().nullable(),
   paymentMethodCode: z.string().optional().nullable(),
 })
 
@@ -85,7 +99,6 @@ export async function POST(req: NextRequest) {
 
     const currentYear = new Date().getFullYear()
     const regNumber = await generateNextRegistrationNumber(event.id, currentYear)
-    const totalAmount = tier.price * data.ticketQty
 
     // Normalize phone format to start with 628
     let normalizedPhone = data.contactWhatsapp.trim()
@@ -95,31 +108,71 @@ export async function POST(req: NextRequest) {
       normalizedPhone = '628' + normalizedPhone.slice(2)
     }
 
-    // Create Midtrans transaction (Core API first, fallback to Snap modal)
-    let paymentResult
-    try {
-      paymentResult = await createMidtransTransaction({
-        orderId: regNumber,
-        amount: totalAmount,
-        paymentCode: data.paymentMethodCode || null,
-        customerName: data.contactName,
-        customerEmail: data.contactEmail || null,
-        customerPhone: normalizedPhone,
-        itemDetails: [
-          {
-            id: String(tier.id),
-            name: `${event.name} - ${tier.name}`,
-            price: tier.price,
-            quantity: data.ticketQty,
-          },
-        ],
-      })
-    } catch (midtransErr: any) {
-      console.error('Midtrans transaction error:', midtransErr)
-      return NextResponse.json(
-        { error: midtransErr.message || 'Gagal memproses pembayaran melalui Midtrans. Silakan coba lagi.' },
-        { status: 502 }
+    const isManualBankTransfer =
+      Boolean(
+        data.paymentMethodCode?.toUpperCase().includes('MANUAL') ||
+        data.paymentMethodCode === 'BCA_MANUAL' ||
+        data.paymentMethodCode === 'MANDIRI_MANUAL'
       )
+
+    let totalAmount = tier.price * data.ticketQty
+    let uniqueCode = 0
+
+    if (isManualBankTransfer) {
+      const { generateDailyUniqueCode } = await import('@/lib/payments/unique-code')
+      uniqueCode = await generateDailyUniqueCode(data.paymentMethodId || null, data.paymentMethodCode || null)
+      totalAmount = totalAmount + uniqueCode
+    }
+
+    // Process payment gateway (Midtrans) or Manual Bank Transfer
+    let paymentResult: {
+      isSnapModal?: boolean
+      snapToken?: string | null
+      paymentUrl?: string | null
+      vaNumber?: string | null
+      bank?: string | null
+      billerCode?: string | null
+      billKey?: string | null
+      qrString?: string | null
+    } = {}
+
+    if (isManualBankTransfer) {
+      const isBca = (data.paymentMethodCode || '').toUpperCase().includes('BCA')
+      paymentResult = {
+        isSnapModal: false,
+        snapToken: null,
+        paymentUrl: null,
+        vaNumber: isBca ? '7772445588' : '1310012345678',
+        bank: isBca ? 'BCA' : 'MANDIRI',
+        billerCode: null,
+        billKey: null,
+        qrString: null,
+      }
+    } else {
+      try {
+        paymentResult = await createMidtransTransaction({
+          orderId: regNumber,
+          amount: totalAmount,
+          paymentCode: data.paymentMethodCode || null,
+          customerName: data.contactName,
+          customerEmail: data.contactEmail || null,
+          customerPhone: normalizedPhone,
+          itemDetails: [
+            {
+              id: String(tier.id),
+              name: `${event.name} - ${tier.name}`,
+              price: tier.price,
+              quantity: data.ticketQty,
+            },
+          ],
+        })
+      } catch (midtransErr: any) {
+        console.error('Midtrans transaction error:', midtransErr)
+        return NextResponse.json(
+          { error: midtransErr.message || 'Gagal memproses pembayaran melalui Midtrans. Silakan coba lagi.' },
+          { status: 502 }
+        )
+      }
     }
 
     const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -136,17 +189,23 @@ export async function POST(req: NextRequest) {
       communityName: data.communityName || null,
       ticketQty: data.ticketQty,
       unitPrice: tier.price,
-      adminFee: 0,
+      adminFee: uniqueCode,
       totalAmount,
       paymentMethodId: data.paymentMethodId || null,
-      paymentMethodCode: data.paymentMethodCode || 'MIDTRANS',
-      paymentType: paymentResult.isSnapModal ? 'snap' : (data.paymentMethodCode?.toLowerCase().includes('qris') ? 'qris' : 'bank_transfer'),
+      paymentMethodCode: data.paymentMethodCode || (isManualBankTransfer ? 'MANUAL_TRANSFER' : 'MIDTRANS'),
+      paymentType: isManualBankTransfer
+        ? 'manual_transfer'
+        : paymentResult.isSnapModal
+        ? 'snap'
+        : data.paymentMethodCode?.toLowerCase().includes('qris')
+        ? 'qris'
+        : 'bank_transfer',
       bank: paymentResult.bank || null,
       vaNumber: paymentResult.vaNumber || null,
       billerCode: paymentResult.billerCode || null,
       billKey: paymentResult.billKey || null,
       snapToken: paymentResult.snapToken || null,
-      qrUrl: paymentResult.qrString || paymentResult.paymentUrl || null,
+      qrUrl: paymentResult.qrString || null,
       paymentUrl: paymentResult.paymentUrl || null,
       ipAddress: ip,
       userAgent: req.headers.get('user-agent') || '',

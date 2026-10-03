@@ -5,10 +5,12 @@ import { Copy, Check, Download } from 'lucide-react'
 
 interface RegistrationCardProps {
   registrationNumber: string
+  status?: string
 }
 
-export function RegistrationCard({ registrationNumber }: RegistrationCardProps) {
+export function RegistrationCard({ registrationNumber, status = 'paid' }: RegistrationCardProps) {
   const [copied, setCopied] = useState(false)
+  const isPaid = status === 'paid'
 
   const handleCopy = async () => {
     try {
@@ -45,15 +47,21 @@ export function RegistrationCard({ registrationNumber }: RegistrationCardProps) 
         </div>
       </div>
 
-      <a
-        href={`/api/registrations/${registrationNumber}/ticket`}
-        target="_blank"
-        rel="noreferrer"
-        className="w-full sm:w-auto bg-white hover:bg-brand-off-white text-brand-text-dark border-2 border-brand-green hover:border-brand-green-leaf font-bold text-sm px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs group"
-      >
-        <Download className="w-4 h-4 text-brand-green group-hover:scale-110 transition-transform" />
-        <span>Simpan Tiket (PDF)</span>
-      </a>
+      {isPaid ? (
+        <a
+          href={`/api/registrations/${registrationNumber}/ticket`}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full sm:w-auto bg-white hover:bg-brand-off-white text-brand-text-dark border-2 border-brand-green hover:border-brand-green-leaf font-bold text-sm px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs group"
+        >
+          <Download className="w-4 h-4 text-brand-green group-hover:scale-110 transition-transform" />
+          <span>Simpan Tiket (PDF)</span>
+        </a>
+      ) : (
+        <div className="text-center sm:text-right text-xs text-amber-700 bg-amber-50 border border-amber-200/70 px-4 py-2.5 rounded-xl font-medium">
+          <span>Tiket PDF terbit otomatis setelah pembayaran lunas</span>
+        </div>
+      )}
     </div>
   )
 }

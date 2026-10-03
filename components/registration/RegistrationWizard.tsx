@@ -38,6 +38,8 @@ interface RegistrationWizardProps {
   }
 }
 
+const DRAFT_STORAGE_KEY = 'walkimpact_registration_draft_v1'
+
 export function RegistrationWizard({
   categories,
   shirtSizes,
@@ -46,20 +48,56 @@ export function RegistrationWizard({
   quota,
 }: RegistrationWizardProps) {
   const router = useRouter()
-
   const defaultMethod = paymentMethods[0] || null
 
   const [step, setStep] = useState<1 | 2>(1)
+  const [isLoaded, setIsLoaded] = useState(false)
   const [formData, setFormData] = useState<StepDataPesertaFormData>({
     contactName: '',
     contactWhatsapp: '',
-    categoryId: categories[0]?.id || null,
+    categoryId: categories[0]?.id ? Number(categories[0].id) : null,
     ticketQty: 1,
-    shirtSizeIds: [shirtSizes[1]?.id || shirtSizes[0]?.id || 1],
+    shirtSizeIds: [Number(shirtSizes[1]?.id || shirtSizes[0]?.id || 1)],
     communityName: '',
-    paymentMethodId: defaultMethod?.id || null,
+    paymentMethodId: defaultMethod?.id ? Number(defaultMethod.id) : null,
     paymentMethodCode: defaultMethod?.code || null,
   })
+
+  // Restore draft from localStorage on initial mount BEFORE saving
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === 'object') {
+          setFormData((prev) => ({
+            contactName: typeof parsed.contactName === 'string' ? parsed.contactName : prev.contactName,
+            contactWhatsapp: typeof parsed.contactWhatsapp === 'string' ? parsed.contactWhatsapp : prev.contactWhatsapp,
+            categoryId: parsed.categoryId ? Number(parsed.categoryId) : prev.categoryId,
+            ticketQty: parsed.ticketQty ? Number(parsed.ticketQty) : prev.ticketQty,
+            shirtSizeIds: Array.isArray(parsed.shirtSizeIds) && parsed.shirtSizeIds.length > 0 ? parsed.shirtSizeIds : prev.shirtSizeIds,
+            communityName: typeof parsed.communityName === 'string' ? parsed.communityName : prev.communityName,
+            paymentMethodId: parsed.paymentMethodId ? Number(parsed.paymentMethodId) : prev.paymentMethodId,
+            paymentMethodCode: parsed.paymentMethodCode || prev.paymentMethodCode,
+          }))
+        }
+      }
+    } catch (e) {
+      console.warn('Could not restore draft from localStorage:', e)
+    } finally {
+      setIsLoaded(true)
+    }
+  }, [])
+
+  // Auto-save form data to localStorage ONLY after initial load completes
+  React.useEffect(() => {
+    if (!isLoaded) return
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData))
+    } catch (e) {
+      console.warn('Could not save draft to localStorage:', e)
+    }
+  }, [formData, isLoaded])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +105,7 @@ export function RegistrationWizard({
   const handleSelectPaymentMethod = (method: PaymentMethod) => {
     setFormData((prev) => ({
       ...prev,
-      paymentMethodId: method.id,
+      paymentMethodId: Number(method.id),
       paymentMethodCode: method.code,
     }))
   }
@@ -78,26 +116,42 @@ export function RegistrationWizard({
   }
 
   const validateStep1 = (): boolean => {
-    if (!formData.contactName.trim() || formData.contactName.trim().length < 3) {
-      setError('Nama lengkap minimal 3 karakter')
+    // 1. Regex Nama Lengkap: Letters, spaces, apostrophes, and dots only. Min 3, max 100
+    const name = formData.contactName.trim()
+    const nameRegex = /^[a-zA-Z\s'.]{3,100}$/
+    if (!name || !nameRegex.test(name)) {
+      setError('Nama lengkap hanya boleh berisi huruf, spasi, titik, atau petik (3 - 100 karakter)')
       return false
     }
 
+    // 2. Regex WhatsApp: Format Indonesia (08xxx / 628xxx / +628xxx), 10 - 15 digit total
     const wa = formData.contactWhatsapp.trim()
-    const waRegex = /^(08|628|\+628)\d{8,13}$/
-    if (!waRegex.test(wa)) {
-      setError('Format nomor WhatsApp tidak valid (contoh: 08123456789)')
+    const waRegex = /^(?:08|\+628|628)[1-9][0-9]{7,12}$/
+    if (!wa || !waRegex.test(wa)) {
+      setError('Nomor WhatsApp tidak valid. Gunakan format 08xx / 628xx aktif (10-15 digit)')
       return false
     }
 
+    // 3. Kategori Peserta
     if (!formData.categoryId) {
       setError('Silakan pilih kategori peserta')
       return false
     }
 
+    // 4. Ukuran Kaos
     if (formData.shirtSizeIds.length !== formData.ticketQty) {
       setError('Pilihan ukuran kaos harus lengkap untuk setiap tiket')
       return false
+    }
+
+    // 5. Regex Nama Komunitas jika diisi (opsional)
+    if (formData.communityName && formData.communityName.trim().length > 0) {
+      const comm = formData.communityName.trim()
+      const commRegex = /^[a-zA-Z0-9\s.,&()\-]{2,100}$/
+      if (!commRegex.test(comm)) {
+        setError('Format nama komunitas/instansi tidak valid (gunakan huruf, angka, tanda baca standar)')
+        return false
+      }
     }
 
     return true
@@ -143,6 +197,13 @@ export function RegistrationWizard({
         redirectUrl,
       } = data
 
+      // Clear draft on successful order creation
+      try {
+        localStorage.removeItem(DRAFT_STORAGE_KEY)
+      } catch (e) {
+        // ignore
+      }
+
       // If Midtrans returned a Snap modal token and fallback was activated
       if (
         isSnapModal &&
@@ -156,15 +217,19 @@ export function RegistrationWizard({
             router.push(`/konfirmasi?order_id=${registrationNumber}`)
           },
           onPending: () => {
+            // User generated a VA or pending code in Snap
             router.push(`/konfirmasi?order_id=${registrationNumber}`)
           },
           onError: () => {
-            setError('Pembayaran gagal atau dibatalkan. Silakan coba kembali.')
+            setError('Pembayaran gagal atau ditolak oleh bank. Silakan coba metode pembayaran lain.')
             setIsSubmitting(false)
           },
           onClose: () => {
-            // User closed the popup, redirect to confirmation with order
-            router.push(`/konfirmasi?order_id=${registrationNumber}`)
+            // User closed the popup without completing
+            setIsSubmitting(false)
+            setError(
+              `Anda menutup jendela pembayaran. Ingin melanjutkan pembayaran atau melihat instruksi nomor VA/QRIS? Klik tombol di bawah atau selesaikan di halaman status: /konfirmasi?order_id=${registrationNumber}`
+            )
           },
         })
       } else {

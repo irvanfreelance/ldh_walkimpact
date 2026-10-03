@@ -83,6 +83,13 @@ export async function PUT(
     } = body
 
     // 1. Update master registration
+    if (status === 'paid') {
+      const { markRegistrationPaid } = await import('@/lib/db/queries/registrations')
+      await markRegistrationPaid(regId, new Date(), {
+        paymentType: 'manual_transfer',
+      })
+    }
+
     const updateResult = await sql`
       UPDATE registrations
       SET

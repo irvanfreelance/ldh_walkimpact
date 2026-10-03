@@ -268,6 +268,8 @@ export async function updateRegistrationPaymentData(
     paymentType?: string
     bank?: string | null
     vaNumber?: string | null
+    billerCode?: string | null
+    billKey?: string | null
     status?: string
     fraudStatus?: string | null
     settlementTime?: Date | null
@@ -284,6 +286,8 @@ export async function updateRegistrationPaymentData(
       payment_type = COALESCE(${data.paymentType || null}, payment_type),
       bank = COALESCE(${data.bank || null}, bank),
       va_number = COALESCE(${data.vaNumber || null}, va_number),
+      biller_code = COALESCE(${data.billerCode || null}, biller_code),
+      bill_key = COALESCE(${data.billKey || null}, bill_key),
       status = COALESCE(${data.status || null}, status),
       fraud_status = COALESCE(${data.fraudStatus || null}, fraud_status),
       settlement_time = COALESCE(${data.settlementTime ? data.settlementTime.toISOString() : null}, settlement_time),

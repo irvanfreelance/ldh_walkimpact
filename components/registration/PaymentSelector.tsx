@@ -30,7 +30,10 @@ export function PaymentSelector({
   )
 
   const renderMethodCard = (method: PaymentMethod) => {
-    const isSelected = selectedMethodId === method.id
+    const isSelected =
+      selectedMethodId !== null &&
+      selectedMethodId !== undefined &&
+      Number(selectedMethodId) === Number(method.id)
 
     return (
       <button
