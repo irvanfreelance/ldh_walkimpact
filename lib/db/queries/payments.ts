@@ -23,14 +23,40 @@ export interface PaymentInstruction {
   sort_order: number
 }
 
+import { getRedis } from '@/lib/cache/redis'
+import { CACHE_KEYS, PAYMENT_METHODS_TTL } from '@/lib/cache/keys'
+
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
+  try {
+    const redis = getRedis()
+    if (redis) {
+      const cached = await redis.get<PaymentMethod[]>(CACHE_KEYS.PAYMENT_METHODS)
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        return cached
+      }
+    }
+  } catch (err) {
+    console.warn('[Cache] getPaymentMethods redis error:', err)
+  }
+
   const rows = await sql`
     SELECT id, code, name, logo_url, type, provider, admin_fee_flat, admin_fee_pct, is_active, is_redirect, sort_order
     FROM payment_methods
     WHERE is_active = TRUE
     ORDER BY sort_order ASC
   `
-  return rows as unknown as PaymentMethod[]
+  const result = rows as unknown as PaymentMethod[]
+
+  try {
+    const redis = getRedis()
+    if (redis && result.length > 0) {
+      await redis.set(CACHE_KEYS.PAYMENT_METHODS, result, { ex: PAYMENT_METHODS_TTL })
+    }
+  } catch (err) {
+    console.warn('[Cache] getPaymentMethods set error:', err)
+  }
+
+  return result
 }
 
 export async function getPaymentInstructions(paymentMethodId: number): Promise<PaymentInstruction[]> {

@@ -7,6 +7,7 @@ import { StepDataPeserta, StepDataPesertaFormData } from './StepDataPeserta'
 import { StepRingkasan } from './StepRingkasan'
 import { OrderSidebar } from './OrderSidebar'
 import { ParticipantCategory, ShirtSize, TicketTier } from '@/lib/db/queries/events'
+import { PaymentMethod } from '@/lib/db/queries/payments'
 
 declare global {
   interface Window {
@@ -28,6 +29,7 @@ interface RegistrationWizardProps {
   categories: ParticipantCategory[]
   shirtSizes: ShirtSize[]
   ticketTier: TicketTier | null
+  paymentMethods?: PaymentMethod[]
   quota?: {
     maxQuota: number
     paidCount: number
@@ -40,9 +42,12 @@ export function RegistrationWizard({
   categories,
   shirtSizes,
   ticketTier,
+  paymentMethods = [],
   quota,
 }: RegistrationWizardProps) {
   const router = useRouter()
+
+  const defaultMethod = paymentMethods[0] || null
 
   const [step, setStep] = useState<1 | 2>(1)
   const [formData, setFormData] = useState<StepDataPesertaFormData>({
@@ -52,10 +57,20 @@ export function RegistrationWizard({
     ticketQty: 1,
     shirtSizeIds: [shirtSizes[1]?.id || shirtSizes[0]?.id || 1],
     communityName: '',
+    paymentMethodId: defaultMethod?.id || null,
+    paymentMethodCode: defaultMethod?.code || null,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleSelectPaymentMethod = (method: PaymentMethod) => {
+    setFormData((prev) => ({
+      ...prev,
+      paymentMethodId: method.id,
+      paymentMethodCode: method.code,
+    }))
+  }
 
   const handleUpdateForm = (updated: Partial<StepDataPesertaFormData>) => {
     setFormData((prev) => ({ ...prev, ...updated }))
@@ -121,10 +136,21 @@ export function RegistrationWizard({
         return
       }
 
-      const { registrationNumber, snapToken, redirectUrl } = data
+      const {
+        registrationNumber,
+        isSnapModal,
+        snapToken,
+        redirectUrl,
+      } = data
 
-      // If window.snap is available from Midtrans
-      if (typeof window !== 'undefined' && window.snap && snapToken && !snapToken.startsWith('demo_')) {
+      // If Midtrans returned a Snap modal token and fallback was activated
+      if (
+        isSnapModal &&
+        snapToken &&
+        typeof window !== 'undefined' &&
+        window.snap &&
+        !snapToken.startsWith('demo_')
+      ) {
         window.snap.pay(snapToken, {
           onSuccess: () => {
             router.push(`/konfirmasi?order_id=${registrationNumber}`)
@@ -137,13 +163,13 @@ export function RegistrationWizard({
             setIsSubmitting(false)
           },
           onClose: () => {
-            // User closed the popup, redirect to confirmation or keep on summary
+            // User closed the popup, redirect to confirmation with order
             router.push(`/konfirmasi?order_id=${registrationNumber}`)
           },
         })
       } else {
-        // In demo or fallback mode, direct to confirmation page
-        router.push(redirectUrl || `/konfirmasi?order_id=${registrationNumber}`)
+        // Core API direct charge succeeded (VA / QRIS generated) or fallback redirect
+        router.push(`/konfirmasi?order_id=${registrationNumber}`)
       }
     } catch (err) {
       console.error('Submit error:', err)
@@ -189,7 +215,9 @@ export function RegistrationWizard({
               categories={categories}
               shirtSizes={shirtSizes}
               ticketTier={ticketTier}
+              paymentMethods={paymentMethods}
               onBack={handleBackToStep1}
+              onSelectPaymentMethod={handleSelectPaymentMethod}
               onSubmitPayment={handlePayment}
               isSubmitting={isSubmitting}
               error={error}

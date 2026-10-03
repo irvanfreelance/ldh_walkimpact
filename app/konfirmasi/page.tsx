@@ -10,6 +10,7 @@ import {
 import { getActiveEvent } from '@/lib/db/queries/events'
 import { ConfirmationHero } from '@/components/confirmation/ConfirmationHero'
 import { RegistrationCard } from '@/components/confirmation/RegistrationCard'
+import { PaymentInstructionsCard } from '@/components/confirmation/PaymentInstructionsCard'
 import { NextSteps } from '@/components/confirmation/NextSteps'
 import { buildWhatsAppShareUrl, formatEventDate } from '@/lib/utils/format'
 
@@ -31,8 +32,8 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
   if (orderId) {
     registration = await getRegistrationByNumber(orderId)
 
-    // In demo or test mode, if pending, mark paid
-    if (registration && (isDemo || registration.status === 'pending')) {
+    // Only in explicit demo simulation mode, auto mark paid
+    if (registration && isDemo && registration.status === 'pending') {
       await markRegistrationPaid(registration.id, new Date())
       registration.status = 'paid'
       // Re-fetch to get any updated BIB numbers
@@ -155,7 +156,27 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
       {/* Main Content */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 space-y-8">
         {/* Hero checkmark & greetings */}
-        <ConfirmationHero contactName={currentRegistration.contact_name} />
+        <ConfirmationHero
+          contactName={currentRegistration.contact_name}
+          status={currentRegistration.status}
+        />
+
+        {/* Pending Payment Instructions (VA / QRIS / Payment Link) */}
+        {currentRegistration.status !== 'paid' && (
+          <PaymentInstructionsCard
+            registrationNumber={currentRegistration.registration_number}
+            totalAmount={currentRegistration.total_amount}
+            status={currentRegistration.status}
+            paymentType={currentRegistration.payment_type}
+            paymentMethodCode={currentRegistration.payment_method_code}
+            bank={currentRegistration.bank}
+            vaNumber={currentRegistration.va_number}
+            billerCode={currentRegistration.biller_code}
+            billKey={currentRegistration.bill_key}
+            qrUrl={currentRegistration.qr_url}
+            paymentUrl={currentRegistration.payment_url}
+          />
+        )}
 
         {/* Registration Number display with Copy & Download */}
         <RegistrationCard registrationNumber={currentRegistration.registration_number} />

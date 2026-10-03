@@ -76,6 +76,8 @@ export async function createRegistration(data: {
   paymentType?: string | null
   bank?: string | null
   vaNumber?: string | null
+  billerCode?: string | null
+  billKey?: string | null
   snapToken?: string | null
   qrUrl?: string | null
   paymentUrl?: string | null
@@ -90,6 +92,7 @@ export async function createRegistration(data: {
       contact_name, contact_email, contact_whatsapp, community_name,
       ticket_qty, unit_price, admin_fee, total_amount,
       payment_method_id, payment_method_code, payment_type, bank, va_number,
+      biller_code, bill_key,
       snap_token, qr_url, payment_url,
       ip_address, user_agent, status
     ) VALUES (
@@ -98,6 +101,7 @@ export async function createRegistration(data: {
       ${data.ticketQty}, ${data.unitPrice}, ${adminFee}, ${data.totalAmount},
       ${data.paymentMethodId || null}, ${data.paymentMethodCode || null}, ${data.paymentType || null},
       ${data.bank || null}, ${data.vaNumber || null},
+      ${data.billerCode || null}, ${data.billKey || null},
       ${data.snapToken || null}, ${data.qrUrl || null}, ${data.paymentUrl || null},
       ${data.ipAddress}, ${data.userAgent}, 'pending'
     )

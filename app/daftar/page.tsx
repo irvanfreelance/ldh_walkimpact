@@ -9,6 +9,7 @@ import {
   getShirtSizes,
 } from '@/lib/db/queries/events'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
+import { getPaymentMethods } from '@/lib/db/queries/payments'
 import { RegistrationWizard } from '@/components/registration/RegistrationWizard'
 
 export const dynamic = 'force-dynamic'
@@ -30,11 +31,12 @@ export default async function DaftarPage() {
     )
   }
 
-  const [categories, shirtSizes, ticketTier, quota] = await Promise.all([
+  const [categories, shirtSizes, ticketTier, quota, paymentMethods] = await Promise.all([
     getParticipantCategories(),
     getShirtSizes(),
     getActiveTicketTier(event.id),
     getQuotaFromDB(event.id),
+    getPaymentMethods(),
   ])
 
   return (
@@ -78,6 +80,7 @@ export default async function DaftarPage() {
           categories={categories}
           shirtSizes={shirtSizes}
           ticketTier={ticketTier}
+          paymentMethods={paymentMethods}
           quota={
             quota || {
               maxQuota: event.max_quota,

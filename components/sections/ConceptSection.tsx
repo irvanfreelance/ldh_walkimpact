@@ -47,9 +47,10 @@ export function ConceptSection({ concepts }: ConceptSectionProps) {
                 {concept.title}
               </h3>
 
-              <p className="text-sm text-brand-text-muted leading-relaxed">
-                {concept.body}
-              </p>
+              <div
+                className="text-sm text-brand-text-muted leading-relaxed prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: concept.body }}
+              />
             </div>
           ))}
         </div>

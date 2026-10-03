@@ -2,14 +2,18 @@ import React from 'react'
 import { ArrowLeft, CheckCircle2, ShieldCheck, CreditCard } from 'lucide-react'
 import { StepDataPesertaFormData } from './StepDataPeserta'
 import { ParticipantCategory, ShirtSize, TicketTier } from '@/lib/db/queries/events'
+import { PaymentMethod } from '@/lib/db/queries/payments'
 import { formatIDR } from '@/lib/utils/format'
+import { PaymentSelector } from './PaymentSelector'
 
 interface StepRingkasanProps {
   formData: StepDataPesertaFormData
   categories: ParticipantCategory[]
   shirtSizes: ShirtSize[]
   ticketTier: TicketTier | null
+  paymentMethods: PaymentMethod[]
   onBack: () => void
+  onSelectPaymentMethod: (method: PaymentMethod) => void
   onSubmitPayment: () => void
   isSubmitting: boolean
   error: string | null
@@ -20,7 +24,9 @@ export function StepRingkasan({
   categories,
   shirtSizes,
   ticketTier,
+  paymentMethods,
   onBack,
+  onSelectPaymentMethod,
   onSubmitPayment,
   isSubmitting,
   error,
@@ -143,21 +149,19 @@ export function StepRingkasan({
         </div>
       </div>
 
-      {/* Midtrans Payment Notice */}
-      <div className="bg-[#F8FAF6] border border-brand-light-gray rounded-2xl p-4 flex items-start gap-3">
-        <CreditCard className="w-5 h-5 text-brand-green shrink-0 mt-0.5" />
-        <div className="text-xs text-brand-text-muted space-y-1">
-          <p className="font-bold text-brand-text-dark">Metode Pembayaran Resmi via Midtrans</p>
-          <p>
-            Mendukung Virtual Account (BCA, Mandiri, BNI, BRI), QRIS (GoPay, OVO, ShopeePay, DANA, LinkAja).
-          </p>
-        </div>
+      {/* Payment Method Selector with Logos */}
+      <div className="bg-white rounded-2xl p-5 border border-brand-light-gray shadow-xs">
+        <PaymentSelector
+          paymentMethods={paymentMethods}
+          selectedMethodId={formData.paymentMethodId || null}
+          onSelectMethod={onSelectPaymentMethod}
+        />
       </div>
 
       {/* Security note */}
       <div className="flex items-center justify-center gap-1.5 text-xs text-brand-text-muted">
         <ShieldCheck className="w-4 h-4 text-brand-green" />
-        <span>Transaksi aman & terenkripsi otomatis</span>
+        <span>Transaksi aman & terenkripsi otomatis via Midtrans</span>
       </div>
 
       {/* Action Buttons */}

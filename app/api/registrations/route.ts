@@ -9,7 +9,7 @@ import {
 import { logPaymentTransaction } from '@/lib/db/queries/payments'
 import { triggerNotification } from '@/lib/db/queries/notifications'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
-import { createSnapTransaction } from '@/lib/midtrans/create-transaction'
+import { createMidtransTransaction } from '@/lib/midtrans/create-transaction'
 import { invalidateQuotaCache } from '@/lib/cache/redis'
 import { rateLimit } from '@/lib/utils/rate-limit'
 
@@ -95,23 +95,34 @@ export async function POST(req: NextRequest) {
       normalizedPhone = '628' + normalizedPhone.slice(2)
     }
 
-    // Create Midtrans Snap transaction
-    const snap = await createSnapTransaction({
-      orderId: regNumber,
-      grossAmount: totalAmount,
-      customerName: data.contactName,
-      customerPhone: normalizedPhone,
-      itemDetails: [
-        {
-          id: String(tier.id),
-          name: `${event.name} - ${tier.name}`,
-          price: tier.price,
-          quantity: data.ticketQty,
-        },
-      ],
-    })
+    // Create Midtrans transaction (Core API first, fallback to Snap modal)
+    let paymentResult
+    try {
+      paymentResult = await createMidtransTransaction({
+        orderId: regNumber,
+        amount: totalAmount,
+        paymentCode: data.paymentMethodCode || null,
+        customerName: data.contactName,
+        customerEmail: data.contactEmail || null,
+        customerPhone: normalizedPhone,
+        itemDetails: [
+          {
+            id: String(tier.id),
+            name: `${event.name} - ${tier.name}`,
+            price: tier.price,
+            quantity: data.ticketQty,
+          },
+        ],
+      })
+    } catch (midtransErr: any) {
+      console.error('Midtrans transaction error:', midtransErr)
+      return NextResponse.json(
+        { error: midtransErr.message || 'Gagal memproses pembayaran melalui Midtrans. Silakan coba lagi.' },
+        { status: 502 }
+      )
+    }
 
-    const expiryTime = new Date(snap.expiry_time || Date.now() + 24 * 60 * 60 * 1000)
+    const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     // Save unified registration record (Order + Payment Gateway details combined in 1 table)
     const registration = await createRegistration({
@@ -128,10 +139,15 @@ export async function POST(req: NextRequest) {
       adminFee: 0,
       totalAmount,
       paymentMethodId: data.paymentMethodId || null,
-      paymentMethodCode: data.paymentMethodCode || 'MIDTRANS_SNAP',
-      paymentType: 'snap',
-      snapToken: snap.token,
-      paymentUrl: snap.redirect_url,
+      paymentMethodCode: data.paymentMethodCode || 'MIDTRANS',
+      paymentType: paymentResult.isSnapModal ? 'snap' : (data.paymentMethodCode?.toLowerCase().includes('qris') ? 'qris' : 'bank_transfer'),
+      bank: paymentResult.bank || null,
+      vaNumber: paymentResult.vaNumber || null,
+      billerCode: paymentResult.billerCode || null,
+      billKey: paymentResult.billKey || null,
+      snapToken: paymentResult.snapToken || null,
+      qrUrl: paymentResult.qrString || paymentResult.paymentUrl || null,
+      paymentUrl: paymentResult.paymentUrl || null,
       ipAddress: ip,
       userAgent: req.headers.get('user-agent') || '',
     })
@@ -164,8 +180,11 @@ export async function POST(req: NextRequest) {
         contactName: data.contactName,
       },
       responsePayload: {
-        snapToken: snap.token,
-        redirectUrl: snap.redirect_url,
+        isSnapModal: paymentResult.isSnapModal,
+        snapToken: paymentResult.snapToken,
+        redirectUrl: paymentResult.paymentUrl,
+        vaNumber: paymentResult.vaNumber,
+        bank: paymentResult.bank,
       },
       httpStatus: 201,
     })
@@ -178,9 +197,10 @@ export async function POST(req: NextRequest) {
       variables: {
         nama: data.contactName,
         nominal: totalAmount,
-        metode: 'Midtrans Snap',
+        metode: data.paymentMethodCode || (paymentResult.isSnapModal ? 'Midtrans Snap' : 'Midtrans Core API'),
         nomor_daftar: regNumber,
         tiket_qty: data.ticketQty,
+        va_number: paymentResult.vaNumber || '-',
       },
     })
 
@@ -190,8 +210,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         registrationNumber: regNumber,
-        snapToken: snap.token,
-        redirectUrl: snap.redirect_url,
+        isSnapModal: paymentResult.isSnapModal,
+        snapToken: paymentResult.snapToken,
+        redirectUrl: paymentResult.paymentUrl,
+        vaNumber: paymentResult.vaNumber,
+        bank: paymentResult.bank,
+        billerCode: paymentResult.billerCode,
+        billKey: paymentResult.billKey,
+        qrString: paymentResult.qrString,
         totalAmount,
         expiryTime,
       },

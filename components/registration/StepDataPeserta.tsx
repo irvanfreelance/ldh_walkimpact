@@ -7,10 +7,13 @@ import { ShirtSizePicker } from './ShirtSizePicker'
 export interface StepDataPesertaFormData {
   contactName: string
   contactWhatsapp: string
+  contactEmail?: string
   categoryId: number | null
   ticketQty: number
   shirtSizeIds: number[]
   communityName: string
+  paymentMethodId?: number | null
+  paymentMethodCode?: string | null
 }
 
 interface StepDataPesertaProps {
