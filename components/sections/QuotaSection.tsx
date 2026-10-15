@@ -113,7 +113,7 @@ export function QuotaSection({
                 </Link>
               )}
               {registrationClosesAt && (
-                <span className="text-xs text-white/60 text-center lg:text-right">
+                <span className="text-base sm:text-lg font-bold text-white text-center lg:text-right">
                   Pendaftaran ditutup {formatRegistrationDeadline(registrationClosesAt)}
                 </span>
               )}
