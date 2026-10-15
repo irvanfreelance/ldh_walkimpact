@@ -21,6 +21,19 @@ export function formatEventDate(dateStr: string): string {
   }
 }
 
+export function formatRegistrationDeadline(value: string | Date): string {
+  try {
+    return new Date(value).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Asia/Jakarta',
+    })
+  } catch {
+    return String(value)
+  }
+}
+
 export function formatTimeRange(start: string, end: string): string {
   const s = start.slice(0, 5).replace(':', '.')
   const e = end.slice(0, 5).replace(':', '.')

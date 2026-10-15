@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { Calendar, MapPin, Clock, ArrowRight } from 'lucide-react'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { formatRegistrationDeadline } from '@/lib/utils/format'
 
 interface OrderSidebarProps {
   quota?: {
@@ -10,6 +11,7 @@ interface OrderSidebarProps {
     remaining: number
     percentage: number
   }
+  registrationClosesAt?: string
 }
 
 export function OrderSidebar({
@@ -19,6 +21,7 @@ export function OrderSidebar({
     remaining: 120,
     percentage: 84,
   },
+  registrationClosesAt,
 }: OrderSidebarProps) {
   return (
     <div className="bg-white rounded-3xl shadow-card border border-brand-light-gray overflow-hidden">
@@ -117,10 +120,12 @@ export function OrderSidebar({
         </div>
 
         {/* Deadline Warning Badge */}
-        <div className="bg-red-50 border border-red-200 rounded-xl py-2 px-3 flex items-center justify-center gap-2 text-red-700 text-xs font-semibold">
-          <Clock className="w-4 h-4 text-red-600" />
-          <span>Pendaftaran ditutup 23 Oktober 2026</span>
-        </div>
+        {registrationClosesAt && (
+          <div className="bg-red-50 border border-red-200 rounded-xl py-2 px-3 flex items-center justify-center gap-2 text-red-700 text-xs font-semibold">
+            <Clock className="w-4 h-4 text-red-600" />
+            <span>Pendaftaran ditutup {formatRegistrationDeadline(registrationClosesAt)}</span>
+          </div>
+        )}
 
         {/* WhatsApp Help */}
         <a

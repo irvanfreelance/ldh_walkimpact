@@ -73,7 +73,11 @@ export default async function HomePage() {
         <ConceptSection concepts={event.concepts} />
         <RundownSection rundowns={event.rundowns} />
         <AudienceSection />
-        <QuotaSection initialData={initialQuota} eventId={event.id} />
+        <QuotaSection
+          initialData={initialQuota}
+          eventId={event.id}
+          registrationClosesAt={event.registration_closes_at}
+        />
         <AboutSection />
         <FAQSection faqs={event.faqs} />
       </main>

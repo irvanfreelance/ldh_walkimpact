@@ -81,6 +81,7 @@ export default async function DaftarPage() {
           shirtSizes={shirtSizes}
           ticketTier={ticketTier}
           paymentMethods={paymentMethods}
+          registrationClosesAt={event.registration_closes_at}
           quota={
             quota || {
               maxQuota: event.max_quota,

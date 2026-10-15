@@ -36,6 +36,7 @@ interface RegistrationWizardProps {
     remaining: number
     percentage: number
   }
+  registrationClosesAt?: string
 }
 
 const DRAFT_STORAGE_KEY = 'walkimpact_registration_draft_v1'
@@ -46,6 +47,7 @@ export function RegistrationWizard({
   ticketTier,
   paymentMethods = [],
   quota,
+  registrationClosesAt,
 }: RegistrationWizardProps) {
   const router = useRouter()
   const defaultMethod = paymentMethods[0] || null
@@ -292,7 +294,7 @@ export function RegistrationWizard({
 
         {/* Right Column: Sticky Sidebar */}
         <div className="lg:col-span-5 lg:sticky lg:top-24">
-          <OrderSidebar quota={quota} />
+          <OrderSidebar quota={quota} registrationClosesAt={registrationClosesAt} />
         </div>
       </div>
     </div>

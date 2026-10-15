@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { formatRegistrationDeadline } from '@/lib/utils/format'
 
 interface QuotaData {
   maxQuota: number
@@ -14,6 +15,7 @@ interface QuotaData {
 interface QuotaSectionProps {
   initialData?: QuotaData
   eventId?: number
+  registrationClosesAt?: string
 }
 
 export function QuotaSection({
@@ -23,6 +25,7 @@ export function QuotaSection({
     remaining: 120,
     percentage: 84,
   },
+  registrationClosesAt,
 }: QuotaSectionProps) {
   const [quota, setQuota] = useState<QuotaData>(initialData)
   const [loading, setLoading] = useState(false)
@@ -109,9 +112,11 @@ export function QuotaSection({
                   Daftar Sekarang →
                 </Link>
               )}
-              <span className="text-xs text-white/60 text-center lg:text-right">
-                Pendaftaran ditutup 23 Oktober 2026
-              </span>
+              {registrationClosesAt && (
+                <span className="text-xs text-white/60 text-center lg:text-right">
+                  Pendaftaran ditutup {formatRegistrationDeadline(registrationClosesAt)}
+                </span>
+              )}
             </div>
           </div>
         </div>
