@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/queries/events'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
 import { getPaymentMethods } from '@/lib/db/queries/payments'
+import { getRegistrationWindowStatus } from '@/lib/utils/registration'
 import { RegistrationWizard } from '@/components/registration/RegistrationWizard'
 
 export const dynamic = 'force-dynamic'
@@ -23,6 +24,30 @@ export default async function DaftarPage() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Pendaftaran Belum Tersedia</h1>
           <p className="text-brand-text-muted">Event saat ini belum aktif.</p>
+          <Link href="/" className="mt-4 inline-block text-brand-green font-bold text-sm">
+            ← Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const windowStatus = getRegistrationWindowStatus(
+    event.registration_opens_at,
+    event.registration_closes_at
+  )
+  if (windowStatus !== 'open') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-center">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">
+            {windowStatus === 'closed' ? 'Pendaftaran Telah Ditutup' : 'Pendaftaran Belum Dibuka'}
+          </h1>
+          <p className="text-brand-text-muted">
+            {windowStatus === 'closed'
+              ? 'Terima kasih atas antusiasme Anda. Masa pendaftaran Walk Impact 2026 telah berakhir.'
+              : 'Pendaftaran Walk Impact 2026 belum dibuka. Silakan kembali lagi nanti.'}
+          </p>
           <Link href="/" className="mt-4 inline-block text-brand-green font-bold text-sm">
             ← Kembali ke Beranda
           </Link>

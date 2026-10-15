@@ -16,6 +16,7 @@ interface QuotaSectionProps {
   initialData?: QuotaData
   eventId?: number
   registrationClosesAt?: string
+  registrationClosed?: boolean
 }
 
 export function QuotaSection({
@@ -26,6 +27,7 @@ export function QuotaSection({
     percentage: 84,
   },
   registrationClosesAt,
+  registrationClosed = false,
 }: QuotaSectionProps) {
   const [quota, setQuota] = useState<QuotaData>(initialData)
   const [loading, setLoading] = useState(false)
@@ -89,7 +91,9 @@ export function QuotaSection({
               </div>
 
               <p className="text-sm sm:text-base text-white/80 font-medium">
-                {isFull
+                {registrationClosed
+                  ? 'Pendaftaran telah ditutup. Terima kasih atas antusiasme dan partisipasi masyarakat Bandung!'
+                  : isFull
                   ? 'Pendaftaran telah penuh. Terima kasih atas partisipasi luar biasa masyarakat Bandung!'
                   : 'Jadilah bagian dari dampak nyata untuk Bandung! Kuota terbatas 750 peserta.'}
               </p>
@@ -97,12 +101,12 @@ export function QuotaSection({
 
             {/* Right Column: CTA Button */}
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col justify-center items-start lg:items-end gap-3">
-              {isFull ? (
+              {registrationClosed || isFull ? (
                 <button
                   disabled
                   className="w-full sm:w-auto bg-gray-500 text-white font-bold text-base px-8 py-3.5 rounded-full cursor-not-allowed opacity-75"
                 >
-                  Kuota Penuh
+                  {registrationClosed ? 'Pendaftaran Ditutup' : 'Kuota Penuh'}
                 </button>
               ) : (
                 <Link
@@ -112,7 +116,7 @@ export function QuotaSection({
                   Daftar Sekarang →
                 </Link>
               )}
-              {registrationClosesAt && (
+              {registrationClosesAt && !registrationClosed && (
                 <span className="text-base sm:text-lg font-bold text-white text-center lg:text-right">
                   Pendaftaran ditutup {formatRegistrationDeadline(registrationClosesAt)}
                 </span>

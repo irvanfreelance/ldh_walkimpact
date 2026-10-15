@@ -10,6 +10,7 @@ import { AboutSection } from '@/components/sections/AboutSection'
 import { FAQSection } from '@/components/sections/FAQSection'
 import { getActiveEvent, ActiveEvent } from '@/lib/db/queries/events'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
+import { isRegistrationClosed } from '@/lib/utils/registration'
 import { getRedis } from '@/lib/cache/redis'
 import { CACHE_KEYS, EVENT_DATA_TTL } from '@/lib/cache/keys'
 
@@ -64,11 +65,13 @@ export default async function HomePage() {
     percentage: 0,
   }
 
+  const registrationClosed = isRegistrationClosed(event.registration_closes_at)
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar />
+      <Navbar registrationClosed={registrationClosed} />
       <main className="flex-1">
-        <HeroSection event={event} />
+        <HeroSection event={event} registrationClosed={registrationClosed} />
         <ImpactSection stats={event.stats} />
         <ConceptSection concepts={event.concepts} />
         <RundownSection rundowns={event.rundowns} />
@@ -77,6 +80,7 @@ export default async function HomePage() {
           initialData={initialQuota}
           eventId={event.id}
           registrationClosesAt={event.registration_closes_at}
+          registrationClosed={registrationClosed}
         />
         <AboutSection />
         <FAQSection faqs={event.faqs} />

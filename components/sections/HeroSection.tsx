@@ -7,9 +7,10 @@ import { formatEventDate } from '@/lib/utils/format'
 
 interface HeroSectionProps {
   event: ActiveEvent
+  registrationClosed?: boolean
 }
 
-export function HeroSection({ event }: HeroSectionProps) {
+export function HeroSection({ event, registrationClosed = false }: HeroSectionProps) {
   // Safely compute ISO target date for CountdownTimer
   let targetDateIso = '2026-11-07T06:00:00+07:00'
   if (event.event_date) {
@@ -99,12 +100,21 @@ export function HeroSection({ event }: HeroSectionProps) {
 
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <Link
-                href="/daftar"
-                className="bg-white text-brand-green-dark hover:bg-brand-off-white font-extrabold text-base px-8 py-3.5 rounded-full text-center shadow-lg transition-all hover:scale-105 active:scale-95"
-              >
-                Daftar Sekarang →
-              </Link>
+              {registrationClosed ? (
+                <button
+                  disabled
+                  className="bg-gray-500 text-white font-bold text-base px-8 py-3.5 rounded-full text-center cursor-not-allowed opacity-75"
+                >
+                  Pendaftaran Ditutup
+                </button>
+              ) : (
+                <Link
+                  href="/daftar"
+                  className="bg-white text-brand-green-dark hover:bg-brand-off-white font-extrabold text-base px-8 py-3.5 rounded-full text-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                >
+                  Daftar Sekarang →
+                </Link>
+              )}
             </div>
 
             {/* Countdown Timer */}

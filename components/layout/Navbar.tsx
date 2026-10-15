@@ -5,7 +5,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 
-export function Navbar() {
+interface NavbarProps {
+  registrationClosed?: boolean
+}
+
+export function Navbar({ registrationClosed = false }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -69,22 +73,40 @@ export function Navbar() {
               />
             </div>
 
-            <Link
-              href="/daftar"
-              className="bg-brand-green hover:bg-brand-green-leaf active:scale-95 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-cta transition-all"
-            >
-              Daftar Sekarang
-            </Link>
+            {registrationClosed ? (
+              <button
+                disabled
+                className="bg-gray-400 text-white text-sm font-bold px-5 py-2.5 rounded-full cursor-not-allowed opacity-75"
+              >
+                Pendaftaran Ditutup
+              </button>
+            ) : (
+              <Link
+                href="/daftar"
+                className="bg-brand-green hover:bg-brand-green-leaf active:scale-95 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-cta transition-all"
+              >
+                Daftar Sekarang
+              </Link>
+            )}
           </div>
 
           {/* Mobile hamburger button */}
           <div className="flex md:hidden items-center space-x-2">
-            <Link
-              href="/daftar"
-              className="bg-brand-green hover:bg-brand-green-leaf text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-cta"
-            >
-              Daftar
-            </Link>
+            {registrationClosed ? (
+              <button
+                disabled
+                className="bg-gray-400 text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-not-allowed opacity-75"
+              >
+                Ditutup
+              </button>
+            ) : (
+              <Link
+                href="/daftar"
+                className="bg-brand-green hover:bg-brand-green-leaf text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-cta"
+              >
+                Daftar
+              </Link>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md text-brand-text-dark hover:bg-brand-off-white"

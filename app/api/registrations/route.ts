@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getActiveEvent, getActiveTicketTier } from '@/lib/db/queries/events'
+import { getRegistrationWindowStatus } from '@/lib/utils/registration'
 import {
   createRegistration,
   createRegistrationParticipants,
@@ -84,6 +85,22 @@ export async function POST(req: NextRequest) {
     const event = await getActiveEvent()
     if (!event) {
       return NextResponse.json({ error: 'Event tidak ditemukan atau belum aktif' }, { status: 404 })
+    }
+
+    const windowStatus = getRegistrationWindowStatus(
+      event.registration_opens_at,
+      event.registration_closes_at
+    )
+    if (windowStatus !== 'open') {
+      return NextResponse.json(
+        {
+          error:
+            windowStatus === 'closed'
+              ? 'Pendaftaran telah ditutup'
+              : 'Pendaftaran belum dibuka',
+        },
+        { status: 403 }
+      )
     }
 
     // Atomic quota check
