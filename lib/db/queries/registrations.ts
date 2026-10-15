@@ -301,13 +301,26 @@ export async function updateRegistrationPaymentData(
 
 export async function generateNextRegistrationNumber(
   eventId: number,
-  year: number
+  year: number,
+  skip = 0
 ): Promise<string> {
+  // Next number = highest number ever used + 1 (+ skip). COUNT(*) is not safe here: the number
+  // doubles as the Midtrans order_id, and Midtrans remembers every order_id forever, so numbers
+  // of deleted or never-saved registrations must not be handed out again. payment_logs keeps
+  // the invoice codes of those registrations.
+  const prefix = `WI-${year}-`
   const rows = await sql`
-    SELECT COUNT(*) AS cnt
-    FROM registrations
-    WHERE event_id = ${eventId}
+    SELECT COALESCE(MAX(n), 0) AS max_n
+    FROM (
+      SELECT CAST(SUBSTRING(registration_number FROM '[0-9]+$') AS INT) AS n
+      FROM registrations
+      WHERE event_id = ${eventId} AND registration_number LIKE ${prefix + '%'}
+      UNION ALL
+      SELECT CAST(SUBSTRING(invoice_code FROM '[0-9]+$') AS INT) AS n
+      FROM payment_logs
+      WHERE invoice_code LIKE ${prefix + '%'}
+    ) t
   `
-  const next = Number(rows[0]?.cnt || 0) + 1
-  return `WI-${year}-${String(next).padStart(4, '0')}`
+  const next = Number(rows[0]?.max_n || 0) + 1 + skip
+  return `${prefix}${String(next).padStart(4, '0')}`
 }

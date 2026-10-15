@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getActiveEvent, getActiveTicketTier } from '@/lib/db/queries/events'
+import {
+  getActiveEvent,
+  getActiveTicketTier,
+  getParticipantCategories,
+  getShirtSizes,
+} from '@/lib/db/queries/events'
+import { getPaymentMethods } from '@/lib/db/queries/payments'
 import { getRegistrationWindowStatus } from '@/lib/utils/registration'
 import {
   createRegistration,
@@ -49,6 +55,7 @@ const BodySchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  let step = 'init'
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
     const limited = await rateLimit(ip, 5, 600)
@@ -103,19 +110,50 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate references against the DB BEFORE creating any payment transaction.
+    // A stale local draft (old category / shirt size / payment method ids) would otherwise
+    // fail on a foreign key after the payment gateway transaction was already created.
+    step = 'validate-references'
+    const [categories, shirtSizes, paymentMethods] = await Promise.all([
+      getParticipantCategories(),
+      getShirtSizes(),
+      data.paymentMethodId ? getPaymentMethods() : Promise.resolve(null),
+    ])
+    if (!categories.some((c) => Number(c.id) === data.categoryId)) {
+      return NextResponse.json(
+        { error: 'Kategori peserta tidak valid. Silakan muat ulang halaman lalu pilih kembali.' },
+        { status: 400 }
+      )
+    }
+    if (!participantsList.every((p) => shirtSizes.some((sz) => Number(sz.id) === p.shirtSizeId))) {
+      return NextResponse.json(
+        { error: 'Ukuran kaos tidak valid. Silakan muat ulang halaman lalu pilih kembali.' },
+        { status: 400 }
+      )
+    }
+    if (paymentMethods && !paymentMethods.some((m) => Number(m.id) === data.paymentMethodId)) {
+      return NextResponse.json(
+        { error: 'Metode pembayaran tidak tersedia. Silakan muat ulang halaman lalu pilih kembali.' },
+        { status: 400 }
+      )
+    }
+
     // Atomic quota check
+    step = 'quota-check'
     const quota = await getQuotaFromDB(event.id)
     if (!quota || quota.remaining < data.ticketQty) {
       return NextResponse.json({ error: 'Mohon maaf, kuota tiket sudah tidak mencukupi' }, { status: 409 })
     }
 
+    step = 'ticket-tier'
     const tier = await getActiveTicketTier(event.id)
     if (!tier) {
       return NextResponse.json({ error: 'Kategori tiket tidak tersedia' }, { status: 404 })
     }
 
     const currentYear = new Date().getFullYear()
-    const regNumber = await generateNextRegistrationNumber(event.id, currentYear)
+    step = 'registration-number'
+    let regNumber = await generateNextRegistrationNumber(event.id, currentYear)
 
     // Normalize phone format to start with 628
     let normalizedPhone = data.contactWhatsapp.trim()
@@ -135,6 +173,7 @@ export async function POST(req: NextRequest) {
     let totalAmount = tier.price * data.ticketQty
     let uniqueCode = 0
 
+    step = 'payment'
     if (isManualBankTransfer) {
       const { generateDailyUniqueCode } = await import('@/lib/payments/unique-code')
       uniqueCode = await generateDailyUniqueCode(data.paymentMethodId || null, data.paymentMethodCode || null)
@@ -166,34 +205,48 @@ export async function POST(req: NextRequest) {
         qrString: null,
       }
     } else {
-      try {
-        paymentResult = await createMidtransTransaction({
-          orderId: regNumber,
-          amount: totalAmount,
-          paymentCode: data.paymentMethodCode || null,
-          customerName: data.contactName,
-          customerEmail: data.contactEmail || null,
-          customerPhone: normalizedPhone,
-          itemDetails: [
-            {
-              id: String(tier.id),
-              name: `${event.name} - ${tier.name}`,
-              price: tier.price,
-              quantity: data.ticketQty,
-            },
-          ],
-        })
-      } catch (midtransErr: any) {
-        console.error('Midtrans transaction error:', midtransErr)
-        return NextResponse.json(
-          { error: midtransErr.message || 'Gagal memproses pembayaran melalui Midtrans. Silakan coba lagi.' },
-          { status: 502 }
-        )
+      // The registration number is the Midtrans order_id. If Midtrans already knows it (orders from
+      // earlier attempts are never forgotten), move on to the next number and try again.
+      const MAX_ORDER_ID_ATTEMPTS = 10
+      for (let attempt = 0; ; attempt++) {
+        try {
+          paymentResult = await createMidtransTransaction({
+            orderId: regNumber,
+            amount: totalAmount,
+            paymentCode: data.paymentMethodCode || null,
+            customerName: data.contactName,
+            customerEmail: data.contactEmail || null,
+            customerPhone: normalizedPhone,
+            itemDetails: [
+              {
+                id: String(tier.id),
+                name: `${event.name} - ${tier.name}`,
+                price: tier.price,
+                quantity: data.ticketQty,
+              },
+            ],
+          })
+          break
+        } catch (midtransErr: any) {
+          const msg = String(midtransErr?.message || '')
+          const orderIdTaken = /order_id.*(already been taken|already exist)|duplicate order/i.test(msg)
+          if (orderIdTaken && attempt < MAX_ORDER_ID_ATTEMPTS) {
+            console.warn(`Midtrans order_id ${regNumber} already used, trying the next number`)
+            regNumber = await generateNextRegistrationNumber(event.id, currentYear, attempt + 1)
+            continue
+          }
+          console.error('Midtrans transaction error:', midtransErr)
+          return NextResponse.json(
+            { error: msg || 'Gagal memproses pembayaran melalui Midtrans. Silakan coba lagi.' },
+            { status: 502 }
+          )
+        }
       }
     }
 
     const expiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
+    step = 'insert-registration'
     // Save unified registration record (Order + Payment Gateway details combined in 1 table)
     const registration = await createRegistration({
       registrationNumber: regNumber,
@@ -233,6 +286,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Save participants with initial slot details
+    step = 'insert-participants'
     await createRegistrationParticipants(
       Number(registration.id),
       participantsList.map((p) => ({
@@ -244,44 +298,57 @@ export async function POST(req: NextRequest) {
       }))
     )
 
-    // Log into payment_logs
-    await logPaymentTransaction({
-      invoiceCode: regNumber,
-      endpoint: '/api/registrations',
-      type: 'CHECKOUT_INITIALIZE',
-      requestPayload: {
-        registrationNumber: regNumber,
-        totalAmount,
-        ticketQty: data.ticketQty,
-        contactName: data.contactName,
-      },
-      responsePayload: {
-        isSnapModal: paymentResult.isSnapModal,
-        snapToken: paymentResult.snapToken,
-        redirectUrl: paymentResult.paymentUrl,
-        vaNumber: paymentResult.vaNumber,
-        bank: paymentResult.bank,
-      },
-      httpStatus: 201,
-    })
+    // Non-critical follow-ups: the registration and payment transaction already exist at this point,
+    // so a failure here must not turn into a 500 for the user.
+    try {
+      step = 'log-payment'
+      // Log into payment_logs
+      await logPaymentTransaction({
+        invoiceCode: regNumber,
+        endpoint: '/api/registrations',
+        type: 'CHECKOUT_INITIALIZE',
+        requestPayload: {
+          registrationNumber: regNumber,
+          totalAmount,
+          ticketQty: data.ticketQty,
+          contactName: data.contactName,
+        },
+        responsePayload: {
+          isSnapModal: paymentResult.isSnapModal,
+          snapToken: paymentResult.snapToken,
+          redirectUrl: paymentResult.paymentUrl,
+          vaNumber: paymentResult.vaNumber,
+          bank: paymentResult.bank,
+        },
+        httpStatus: 201,
+      })
 
-    // Trigger INVOICE_PENDING notification
-    await triggerNotification({
-      eventTrigger: 'INVOICE_PENDING',
-      invoiceCode: regNumber,
-      recipient: normalizedPhone,
-      variables: {
-        nama: data.contactName,
-        nominal: totalAmount,
-        metode: data.paymentMethodCode || (paymentResult.isSnapModal ? 'Midtrans Snap' : 'Midtrans Core API'),
-        nomor_daftar: regNumber,
-        tiket_qty: data.ticketQty,
-        va_number: paymentResult.vaNumber || '-',
-      },
-    })
+      step = 'notification'
+      // Trigger INVOICE_PENDING notification
+      await triggerNotification({
+        eventTrigger: 'INVOICE_PENDING',
+        invoiceCode: regNumber,
+        recipient: normalizedPhone,
+        variables: {
+          nama: data.contactName,
+          nominal: totalAmount,
+          metode: data.paymentMethodCode || (paymentResult.isSnapModal ? 'Midtrans Snap' : 'Midtrans Core API'),
+          nomor_daftar: regNumber,
+          tiket_qty: data.ticketQty,
+          va_number: paymentResult.vaNumber || '-',
+        },
+      })
 
-    // Invalidate quota cache
-    await invalidateQuotaCache()
+    } catch (followUpErr) {
+      console.error(`Registration ${regNumber} created, but follow-up step '${step}' failed:`, followUpErr)
+    }
+
+    // Invalidate quota cache (independent of the log/notification steps above)
+    try {
+      await invalidateQuotaCache()
+    } catch (cacheErr) {
+      console.warn('Quota cache invalidation failed:', cacheErr)
+    }
 
     return NextResponse.json(
       {
@@ -300,7 +367,14 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Registration POST error:', error)
-    return NextResponse.json({ error: 'Terjadi kesalahan sistem saat memproses pendaftaran' }, { status: 500 })
+    console.error(`Registration POST error at step '${step}':`, error)
+    const detail = error instanceof Error ? error.message : String(error)
+    return NextResponse.json(
+      {
+        error: 'Terjadi kesalahan sistem saat memproses pendaftaran',
+        ...(process.env.NODE_ENV !== 'production' ? { detail: `[${step}] ${detail}` } : {}),
+      },
+      { status: 500 }
+    )
   }
 }

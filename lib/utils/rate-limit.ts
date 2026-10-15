@@ -5,6 +5,10 @@ export async function rateLimit(
   limit = 5,
   windowSeconds = 600
 ): Promise<boolean> {
+  // Local development: every request shares the same 'unknown' IP bucket, so testing the form
+  // a few times would lock you out for the whole window.
+  if (process.env.NODE_ENV !== 'production') return false
+
   try {
     const redis = getRedis()
     if (!redis) return false // Allow if Redis is not configured
