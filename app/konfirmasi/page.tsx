@@ -12,7 +12,7 @@ import { ConfirmationHero } from '@/components/confirmation/ConfirmationHero'
 import { RegistrationCard } from '@/components/confirmation/RegistrationCard'
 import { PaymentInstructionsCard } from '@/components/confirmation/PaymentInstructionsCard'
 import { NextSteps } from '@/components/confirmation/NextSteps'
-import { buildWhatsAppShareUrl, formatEventDate } from '@/lib/utils/format'
+import { buildWhatsAppShareUrl, formatEventDate, formatTimeWib } from '@/lib/utils/format'
 
 interface KonfirmasiPageProps {
   searchParams: Promise<{
@@ -106,7 +106,7 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
   }
 
   const currentRegistration: RegistrationDetail = registration
-  const shareUrl = buildWhatsAppShareUrl(currentRegistration.registration_number)
+  const shareUrl = buildWhatsAppShareUrl(currentRegistration.registration_number, event)
 
   return (
     <div className="min-h-screen bg-brand-off-white flex flex-col relative overflow-hidden">
@@ -284,7 +284,7 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
                 <div>
                   <span className="text-[11px] text-brand-text-muted block">Tanggal Pelaksanaan</span>
                   <span className="font-bold text-brand-text-dark">
-                    {event ? formatEventDate(event.event_date) : 'Sabtu, 7 November 2026'}
+                    {event ? formatEventDate(event.event_date) : '-'}
                   </span>
                 </div>
               </div>
@@ -295,7 +295,9 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
                 </div>
                 <div>
                   <span className="text-[11px] text-brand-text-muted block">Waktu Kumpul</span>
-                  <span className="font-bold text-brand-text-dark">05.30 WIB (Pagi)</span>
+                  <span className="font-bold text-brand-text-dark">
+                    {event?.assembly_time ? formatTimeWib(event.assembly_time) : '-'}
+                  </span>
                 </div>
               </div>
 
@@ -306,7 +308,7 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
                 <div>
                   <span className="text-[11px] text-brand-text-muted block">Lokasi Titik Kumpul</span>
                   <span className="font-bold text-brand-text-dark">
-                    {event?.venue_name || 'Pasar Modern Batununggal Indah'}, {event?.venue_city || 'Bandung'}
+                    {[event?.venue_name, event?.venue_city].filter(Boolean).join(', ') || '-'}
                   </span>
                 </div>
               </div>
@@ -315,7 +317,7 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
         </div>
 
         {/* 4 Next Steps & Amber Impact Banner */}
-        <NextSteps />
+        <NextSteps event={event} />
 
         {/* Bottom CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

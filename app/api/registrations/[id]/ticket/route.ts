@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import React from 'react'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { getRegistrationByNumber } from '@/lib/db/queries/registrations'
+import { getEventSummary } from '@/lib/db/queries/events'
 import { TicketPDF } from '@/lib/pdf/ticket-pdf'
 
 export const runtime = 'nodejs'
@@ -22,7 +23,8 @@ export async function GET(
     }
 
     // Render PDF buffer using React.createElement
-    const element = React.createElement(TicketPDF, { registration })
+    const event = await getEventSummary(registration.event_id)
+    const element = React.createElement(TicketPDF, { registration, event })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfBuffer = await renderToBuffer(element as any)
 

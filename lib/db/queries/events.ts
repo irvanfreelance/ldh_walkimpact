@@ -234,3 +234,25 @@ export async function getShirtSizes(): Promise<ShirtSize[]> {
   `
   return rows as unknown as ShirtSize[]
 }
+
+export interface EventSummary {
+  event_date: string
+  assembly_time: string
+  start_time: string
+  venue_name: string
+  venue_city: string
+  max_quota: number
+  rpc_starts_at: string | null
+  rpc_ends_at: string | null
+}
+
+export async function getEventSummary(eventId: number): Promise<EventSummary | null> {
+  const rows = await sql`
+    SELECT event_date, assembly_time, start_time, venue_name, venue_city,
+           max_quota, rpc_starts_at, rpc_ends_at
+    FROM events
+    WHERE id = ${eventId}
+    LIMIT 1
+  `
+  return (rows[0] as unknown as EventSummary) ?? null
+}

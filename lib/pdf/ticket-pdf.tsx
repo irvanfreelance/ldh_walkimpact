@@ -1,5 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { RegistrationDetail } from '@/lib/db/queries/registrations'
+import type { EventSummary } from '@/lib/db/queries/events'
+import { formatDateRange, formatEventDate, formatTimeWib } from '@/lib/utils/format'
 
 const styles = StyleSheet.create({
   page: {
@@ -139,7 +141,19 @@ const styles = StyleSheet.create({
   },
 })
 
-export function TicketPDF({ registration }: { registration: RegistrationDetail }) {
+export function TicketPDF({
+  registration,
+  event,
+}: {
+  registration: RegistrationDetail
+  event?: EventSummary | null
+}) {
+  const whenText = event?.event_date
+    ? [formatEventDate(event.event_date), formatTimeWib(event.assembly_time)].filter(Boolean).join(' · ')
+    : '-'
+  const venueText = [event?.venue_name, event?.venue_city].filter(Boolean).join(', ') || '-'
+  const rpcRange = formatDateRange(event?.rpc_starts_at, event?.rpc_ends_at)
+
   return (
     <Document>
       <Page size="A5" orientation="landscape" style={styles.page}>
@@ -180,11 +194,11 @@ export function TicketPDF({ registration }: { registration: RegistrationDetail }
         <View style={styles.row}>
           <View style={styles.col}>
             <Text style={styles.label}>Waktu & Tanggal</Text>
-            <Text style={styles.value}>Sabtu, 7 November 2026 · 05.30 WIB</Text>
+            <Text style={styles.value}>{whenText}</Text>
           </View>
           <View style={styles.col}>
             <Text style={styles.label}>Lokasi Acara</Text>
-            <Text style={styles.value}>Pasar Modern Batununggal Indah, Bandung</Text>
+            <Text style={styles.value}>{venueText}</Text>
           </View>
           <View style={styles.col}>
             <Text style={styles.label}>Jumlah Tiket</Text>
@@ -215,7 +229,7 @@ export function TicketPDF({ registration }: { registration: RegistrationDetail }
         <View style={styles.divider} />
 
         <Text style={styles.footer}>
-          Tunjukkan tiket ini saat pengambilan perlengkapan (2–3 Nov 2026) dan registrasi ulang Hari-H · Kontak: +62 815-7222-5545 · walkimpact.id
+          Tunjukkan tiket ini saat pengambilan perlengkapan{rpcRange ? ` (${rpcRange})` : ''} dan registrasi ulang Hari-H · Kontak: +62 815-7222-5545 · walkimpact.id
         </Text>
       </Page>
     </Document>

@@ -6,7 +6,7 @@ import { StepIndicator } from '@/components/ui/StepIndicator'
 import { StepDataPeserta, StepDataPesertaFormData } from './StepDataPeserta'
 import { StepRingkasan } from './StepRingkasan'
 import { OrderSidebar } from './OrderSidebar'
-import { ParticipantCategory, ShirtSize, TicketTier } from '@/lib/db/queries/events'
+import { EventSummary, ParticipantCategory, ShirtSize, TicketTier } from '@/lib/db/queries/events'
 import { PaymentMethod } from '@/lib/db/queries/payments'
 
 declare global {
@@ -37,6 +37,7 @@ interface RegistrationWizardProps {
     percentage: number
   }
   registrationClosesAt?: string
+  event?: EventSummary | null
 }
 
 const DRAFT_STORAGE_KEY = 'walkimpact_registration_draft_v1'
@@ -48,6 +49,7 @@ export function RegistrationWizard({
   paymentMethods = [],
   quota,
   registrationClosesAt,
+  event,
 }: RegistrationWizardProps) {
   const router = useRouter()
   const defaultMethod = paymentMethods[0] || null
@@ -294,7 +296,7 @@ export function RegistrationWizard({
 
         {/* Right Column: Sticky Sidebar */}
         <div className="lg:col-span-5 lg:sticky lg:top-24">
-          <OrderSidebar quota={quota} registrationClosesAt={registrationClosesAt} />
+          <OrderSidebar quota={quota} registrationClosesAt={registrationClosesAt} event={event} />
         </div>
       </div>
     </div>

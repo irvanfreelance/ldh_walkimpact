@@ -107,6 +107,7 @@ export default async function DaftarPage() {
           ticketTier={ticketTier}
           paymentMethods={paymentMethods}
           registrationClosesAt={event.registration_closes_at}
+          event={event}
           quota={
             quota || {
               maxQuota: event.max_quota,

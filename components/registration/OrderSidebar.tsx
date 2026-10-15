@@ -2,7 +2,8 @@ import React from 'react'
 import Image from 'next/image'
 import { Calendar, MapPin, Clock, ArrowRight } from 'lucide-react'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { formatRegistrationDeadline } from '@/lib/utils/format'
+import { formatEventDate, formatRegistrationDeadline, formatTimeWib } from '@/lib/utils/format'
+import type { EventSummary } from '@/lib/db/queries/events'
 
 interface OrderSidebarProps {
   quota?: {
@@ -12,6 +13,7 @@ interface OrderSidebarProps {
     percentage: number
   }
   registrationClosesAt?: string
+  event?: EventSummary | null
 }
 
 export function OrderSidebar({
@@ -22,6 +24,7 @@ export function OrderSidebar({
     percentage: 84,
   },
   registrationClosesAt,
+  event,
 }: OrderSidebarProps) {
   return (
     <div className="bg-white rounded-3xl shadow-card border border-brand-light-gray overflow-hidden">
@@ -65,8 +68,12 @@ export function OrderSidebar({
               <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold text-brand-text-dark">Sabtu, 7 November 2026</div>
-              <div className="text-brand-text-muted">06.00 WIB – Selesai</div>
+              <div className="font-bold text-brand-text-dark">
+                {event?.event_date ? formatEventDate(event.event_date) : '-'}
+              </div>
+              <div className="text-brand-text-muted">
+                {event?.start_time ? `${formatTimeWib(event.start_time)} – Selesai` : ''}
+              </div>
             </div>
           </div>
 
@@ -75,8 +82,8 @@ export function OrderSidebar({
               <MapPin className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold text-brand-text-dark">Pasar Modern Batununggal Indah</div>
-              <div className="text-brand-text-muted">Bandung</div>
+              <div className="font-bold text-brand-text-dark">{event?.venue_name || '-'}</div>
+              <div className="text-brand-text-muted">{event?.venue_city || ''}</div>
             </div>
           </div>
         </div>

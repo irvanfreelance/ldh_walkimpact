@@ -1,8 +1,16 @@
 import React from 'react'
 import Image from 'next/image'
 import { FileText, MessageSquare, ShoppingBag, Footprints } from 'lucide-react'
+import { formatDateRange, formatTimeWib } from '@/lib/utils/format'
+import type { EventSummary } from '@/lib/db/queries/events'
 
-export function NextSteps() {
+interface NextStepsProps {
+  event?: EventSummary | null
+}
+
+export function NextSteps({ event }: NextStepsProps) {
+  const rpcRange = formatDateRange(event?.rpc_starts_at, event?.rpc_ends_at)
+  const assembly = event?.assembly_time ? formatTimeWib(event.assembly_time).replace(' WIB', '') : null
   const steps = [
     {
       num: 1,
@@ -19,14 +27,14 @@ export function NextSteps() {
     {
       num: 3,
       icon: <ShoppingBag className="w-5 h-5 text-brand-green" />,
-      title: 'Ambil perlengkapan pada 2–3 November 2026',
+      title: rpcRange ? `Ambil perlengkapan pada ${rpcRange}` : 'Ambil perlengkapan sesuai jadwal',
       description: 'Pengambilan race pack & kaos event di lokasi yang akan diumumkan via WhatsApp.',
     },
     {
       num: 4,
       icon: <Footprints className="w-5 h-5 text-brand-green" />,
-      title: 'Datang pukul 05.30 di hari-H',
-      description: 'Bersama 750 peserta, mari kita berjalan dan mengantarkan kebaikan untuk sesama!',
+      title: assembly ? `Datang pukul ${assembly} di hari-H` : 'Datang tepat waktu di hari-H',
+      description: `Bersama ${event?.max_quota ? `${event.max_quota} peserta` : 'seluruh peserta'}, mari kita berjalan dan mengantarkan kebaikan untuk sesama!`,
     },
   ]
 
