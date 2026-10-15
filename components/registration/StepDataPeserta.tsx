@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { User, MessageSquare, Users, Ticket, Building, Minus, Plus } from 'lucide-react'
 import { ParticipantCategory, ShirtSize } from '@/lib/db/queries/events'
 import { ShirtSizePicker } from './ShirtSizePicker'
+import { SizeChartButton } from './SizeChartModal'
 
 export interface StepDataPesertaFormData {
   contactName: string
@@ -212,7 +213,7 @@ export function StepDataPeserta({
           <label className="block text-xs sm:text-sm font-bold text-brand-text-dark">
             Ukuran Kaos <span className="text-red-500">*</span>
           </label>
-          <span className="text-xs text-brand-text-muted">Ukuran standar unisex</span>
+          <SizeChartButton />
         </div>
 
         <div className="space-y-3 p-4 bg-brand-off-white/80 rounded-2xl border border-brand-light-gray/60">

@@ -284,11 +284,15 @@ async function runInit() {
   // Shirt sizes
   await sql`
     INSERT INTO shirt_sizes (code, label, sort_order) VALUES
-      ('S',   'Small',    1),
-      ('M',   'Medium',   2),
-      ('L',   'Large',    3),
-      ('XL',  'X-Large',  4),
-      ('XXL', 'XX-Large', 5)
+      ('XS',  'X-Small',  1),
+      ('S',   'Small',    2),
+      ('M',   'Medium',   3),
+      ('L',   'Large',    4),
+      ('XL',  'X-Large',  5),
+      ('2XL', '2X-Large', 6),
+      ('3XL', '3X-Large', 7),
+      ('4XL', '4X-Large', 8),
+      ('5XL', '5X-Large', 9)
     ON CONFLICT (code) DO NOTHING;
   `
 

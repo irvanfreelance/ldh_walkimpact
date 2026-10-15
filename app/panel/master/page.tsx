@@ -435,7 +435,7 @@ export default function MasterDataPage() {
                       type="text"
                       value={form.code || ''}
                       onChange={(e) => setForm({ ...form, code: e.target.value })}
-                      placeholder="e.g. S, M, L, XL, XXL, 3XL"
+                      placeholder="e.g. S, M, L, XL, 2XL, 3XL"
                       required
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#6DC230] focus:outline-none"
                     />
