@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import {
   MessageSquare,
   Mail,
@@ -17,6 +17,8 @@ import {
   ToggleRight,
   Eye,
   Sparkles,
+  Code2,
+  Monitor,
 } from 'lucide-react'
 
 // ------- types -------
@@ -182,6 +184,23 @@ export default function NotificationsPage() {
     ...EMPTY_EMAIL,
     is_active: true,
   })
+  const [emailTab, setEmailTab] = useState<'visual' | 'html' | 'preview'>('visual')
+  const lastFocusedRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+
+  const insertVariable = (tag: string) => {
+    const el = lastFocusedRef.current
+    if (!el) return
+    const field = el.dataset.field as keyof EmailContent | undefined
+    if (!field) return
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? el.value.length
+    const newVal = el.value.slice(0, start) + tag + el.value.slice(end)
+    setEmailForm((prev) => ({ ...prev, [field]: newVal }))
+    setTimeout(() => {
+      el.focus()
+      el.setSelectionRange(start + tag.length, start + tag.length)
+    }, 0)
+  }
 
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
@@ -278,6 +297,7 @@ export default function NotificationsPage() {
     setEditingItem(tpl)
     const content = parseEmailContent(tpl.message_content)
     setEmailForm({ ...content, is_active: tpl.is_active })
+    setEmailTab('visual')
     setIsModalOpen(true)
   }
 
@@ -790,156 +810,304 @@ export default function NotificationsPage() {
 
       {/* ===== Modal Email ===== */}
       {isModalOpen && isEmailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-lg text-[#1A2714]">Edit Template Email</h3>
-                <span className="text-[11px] font-mono bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
-                  {editingItem?.event_trigger}
-                </span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl max-h-[95vh] flex flex-col">
+
+            {/* Modal header */}
+            <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[#1A2714]">Edit Template Email</h3>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Ubah isi dan tampilan email notifikasi</p>
+                </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsModalOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-              {/* Form */}
-              <form onSubmit={handleEmailSubmit} className="p-6 space-y-3 border-r border-gray-100 overflow-y-auto max-h-[70vh]">
+            {/* Scrollable body */}
+            <form onSubmit={handleEmailSubmit} className="flex flex-col overflow-y-auto flex-1">
+              <div className="px-6 pt-5 pb-4 space-y-4">
+
+                {/* Event Trigger + Channel row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Event Trigger</label>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                      <span className="text-xs font-mono font-bold text-[#3A7D0A]">{editingItem?.event_trigger}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Channel</label>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Mail className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-xs font-bold text-blue-700">EMAIL</span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Subject */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Subject Email</label>
-                  <input type="text" value={emailForm.subject}
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Subject Email</label>
+                  <input
+                    type="text"
+                    data-field="subject"
+                    value={emailForm.subject}
                     onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                    placeholder="Judul email..." required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                    onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                    placeholder="Judul email yang akan muncul di inbox peserta..."
+                    required
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:outline-none transition-shadow"
                   />
                 </div>
 
-                {/* Header Title */}
+                {/* Body tabs */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Judul Header</label>
-                  <input type="text" value={emailForm.header_title}
-                    onChange={(e) => setEmailForm({ ...emailForm, header_title: e.target.value })}
-                    placeholder="e.g. ✅ Pendaftaran Berhasil!" required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  />
-                </div>
-
-                {/* Body */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Paragraf Utama</label>
-                  <textarea rows={3} value={emailForm.body}
-                    onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
-                    placeholder="Teks pembuka email..." required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
-                  />
-                </div>
-
-                {/* Barcode Note */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan Barcode / Info</label>
-                  <textarea rows={2} value={emailForm.barcode_note}
-                    onChange={(e) => setEmailForm({ ...emailForm, barcode_note: e.target.value })}
-                    placeholder="Catatan barcode atau info tambahan..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
-                  />
-                </div>
-
-                {/* Jersey Heading + Contact */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Judul Seksi Jersey</label>
-                    <input type="text" value={emailForm.jersey_heading}
-                      onChange={(e) => setEmailForm({ ...emailForm, jersey_heading: e.target.value })}
-                      placeholder="Pengambilan Jersey"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide">Body Email (HTML)</label>
+                    {/* Tab switcher */}
+                    <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                      {([
+                        { key: 'visual', label: 'Visual', icon: Eye },
+                        { key: 'html', label: 'HTML', icon: Code2 },
+                        { key: 'preview', label: 'Preview', icon: Monitor },
+                      ] as const).map(({ key, label, icon: Icon }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setEmailTab(key)}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                            emailTab === key
+                              ? 'bg-white text-gray-900 shadow-xs'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Kontak Info</label>
-                    <input type="text" value={emailForm.jersey_contact}
-                      onChange={(e) => setEmailForm({ ...emailForm, jersey_contact: e.target.value })}
-                      placeholder="Info selengkapnya: ..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    />
-                  </div>
+
+                  {/* Tab: Visual — email preview live */}
+                  {emailTab === 'visual' && (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                      <div className="px-3 py-2 border-b border-gray-200 bg-white flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                        <span className="text-[10px] text-gray-400 ml-2">preview — klik HTML untuk mengedit teks</span>
+                      </div>
+                      <div className="p-3 overflow-y-auto max-h-72">
+                        <EmailPreview trigger={editingItem?.event_trigger || ''} content={emailForm} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab: HTML — all 9 editable fields */}
+                  {emailTab === 'html' && (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                      {/* Toolbar hint */}
+                      <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="text-[11px] text-amber-700">
+                          Warna teks di sini = warna yang diterima di inbox. Klik <strong>Preview</strong> untuk verifikasi tampilan akhir sebelum simpan.
+                        </span>
+                      </div>
+
+                      <div className="p-4 space-y-3 bg-white max-h-72 overflow-y-auto">
+                        {/* Header title */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Judul Header</label>
+                          <input
+                            type="text" data-field="header_title"
+                            value={emailForm.header_title}
+                            onChange={(e) => setEmailForm({ ...emailForm, header_title: e.target.value })}
+                            onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                            placeholder="e.g. ✅ Pendaftaran Berhasil!"
+                            required
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Body paragraph */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Paragraf Utama</label>
+                          <textarea
+                            rows={3} data-field="body"
+                            value={emailForm.body}
+                            onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
+                            onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                            placeholder="Teks pembuka email setelah sapaan..."
+                            required
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none resize-none"
+                          />
+                        </div>
+
+                        {/* Barcode note */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Catatan Barcode / Info</label>
+                          <textarea
+                            rows={2} data-field="barcode_note"
+                            value={emailForm.barcode_note}
+                            onChange={(e) => setEmailForm({ ...emailForm, barcode_note: e.target.value })}
+                            onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                            placeholder="Catatan barcode atau info penting lainnya..."
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none resize-none"
+                          />
+                        </div>
+
+                        {/* Jersey section */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Judul Seksi Jersey</label>
+                            <input
+                              type="text" data-field="jersey_heading"
+                              value={emailForm.jersey_heading}
+                              onChange={(e) => setEmailForm({ ...emailForm, jersey_heading: e.target.value })}
+                              onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                              placeholder="Pengambilan Jersey"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kontak Info</label>
+                            <input
+                              type="text" data-field="jersey_contact"
+                              value={emailForm.jersey_contact}
+                              onChange={(e) => setEmailForm({ ...emailForm, jersey_contact: e.target.value })}
+                              onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                              placeholder="Info selengkapnya: ..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* CTA */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Teks Sebelum Tombol</label>
+                          <textarea
+                            rows={2} data-field="cta_note"
+                            value={emailForm.cta_note}
+                            onChange={(e) => setEmailForm({ ...emailForm, cta_note: e.target.value })}
+                            onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                            placeholder="Sampai bertemu di {nama_program}! ..."
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none resize-none"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Label Tombol CTA</label>
+                            <input
+                              type="text" data-field="cta_label"
+                              value={emailForm.cta_label}
+                              onChange={(e) => setEmailForm({ ...emailForm, cta_label: e.target.value })}
+                              onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                              placeholder="Download Barcode"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Footer</label>
+                            <input
+                              type="text" data-field="footer"
+                              value={emailForm.footer}
+                              onChange={(e) => setEmailForm({ ...emailForm, footer: e.target.value })}
+                              onFocus={(e) => { lastFocusedRef.current = e.currentTarget }}
+                              placeholder="LAZ Darul Hikam — ..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab: Preview — full-size view */}
+                  {emailTab === 'preview' && (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-[#f4f4f4]">
+                      <div className="px-3 py-2 border-b border-gray-200 bg-white flex items-center gap-1.5">
+                        <Monitor className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-[10px] text-gray-500">Tampilan email di inbox — dengan data contoh</span>
+                      </div>
+                      <div className="p-4 overflow-y-auto max-h-72">
+                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center', width: '117%', marginLeft: '-8.5%' }}>
+                          <EmailPreview trigger={editingItem?.event_trigger || ''} content={emailForm} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* CTA Note + Label */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Teks Sebelum Tombol</label>
-                  <textarea rows={2} value={emailForm.cta_note}
-                    onChange={(e) => setEmailForm({ ...emailForm, cta_note: e.target.value })}
-                    placeholder="Sampai bertemu di..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Label Tombol CTA</label>
-                    <input type="text" value={emailForm.cta_label}
-                      onChange={(e) => setEmailForm({ ...emailForm, cta_label: e.target.value })}
-                      placeholder="Download Barcode"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Footer</label>
-                    <input type="text" value={emailForm.footer}
-                      onChange={(e) => setEmailForm({ ...emailForm, footer: e.target.value })}
-                      placeholder="LAZ Darul Hikam — ..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Placeholders hint */}
-                <div className="bg-gray-50 rounded-lg p-2.5">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Placeholder tersedia:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {['{nama}','{nama_program}','{nomor_daftar}','{nominal}','{metode}','{tanggal_acara}','{lokasi}','{ticket_url}'].map((tag) => (
-                      <span key={tag} className="px-1.5 py-0.5 bg-white border border-gray-200 text-gray-600 rounded text-[10px] font-mono">
+                {/* Variables */}
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+                    <Code2 className="w-3 h-3" /> Variabel yang Tersedia
+                  </p>
+                  <p className="text-[10px] text-blue-500 mb-2">Klik variabel untuk menyisipkan ke field yang sedang aktif</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      '{nama}', '{nominal}', '{nomor_daftar}', '{metode}', '{tanggal_acara}',
+                      '{nama_program}', '{jam_registrasi}', '{jam_acara}', '{lokasi}',
+                      '{rpc_lokasi}', '{ticket_url}',
+                    ].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => insertVariable(tag)}
+                        className="px-2 py-1 bg-white hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-md text-[11px] font-mono font-semibold transition-colors"
+                      >
                         {tag}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
-                  <input type="checkbox" checked={emailForm.is_active}
-                    onChange={(e) => setEmailForm({ ...emailForm, is_active: e.target.checked })}
-                    className="w-4 h-4 text-blue-500 rounded-sm"
-                  />
-                  Aktifkan template ini
-                </label>
-
-                <div className="flex items-center justify-end gap-2 pt-3 border-t">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100">
-                    Batal
-                  </button>
-                  <button type="submit" disabled={saving}
-                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+                {/* Active toggle */}
+                <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Template aktif</p>
+                    <p className="text-[11px] text-gray-500">Email akan dikirim otomatis jika template ini aktif</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEmailForm({ ...emailForm, is_active: !emailForm.is_active })}
+                    className={`relative inline-flex w-11 h-6 items-center rounded-full transition-colors focus:outline-none ${
+                      emailForm.is_active ? 'bg-[#6DC230]' : 'bg-gray-300'
+                    }`}
                   >
-                    <Save className="w-3.5 h-3.5" />
-                    {saving ? 'Menyimpan...' : 'Simpan'}
+                    <span
+                      className={`inline-block w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                        emailForm.is_active ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
                   </button>
                 </div>
-              </form>
-
-              {/* Live preview */}
-              <div className="p-6 bg-gray-50">
-                <p className="text-[10px] font-bold uppercase text-gray-400 mb-3 flex items-center gap-1">
-                  <Eye className="w-3 h-3" /> Preview Real-time
-                </p>
-                <EmailPreview
-                  trigger={editingItem?.event_trigger || ''}
-                  content={emailForm}
-                />
               </div>
-            </div>
+
+              {/* Footer actions */}
+              <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-gray-50 shrink-0 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {saving ? 'Menyimpan...' : 'Simpan Template'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
