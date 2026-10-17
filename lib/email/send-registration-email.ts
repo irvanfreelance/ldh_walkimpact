@@ -220,6 +220,15 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
   const gmailUser = process.env.GMAIL_USER
   if (!gmailUser || !process.env.GMAIL_APP_PASSWORD) {
     console.warn('[email] GMAIL_USER or GMAIL_APP_PASSWORD not set, skipping email')
+    await logNotification({
+      templateId: null,
+      invoiceCode: registrationNumber,
+      recipient: 'system',
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_SUCCESS', registrationNumber },
+      responsePayload: { error: 'GMAIL_USER atau GMAIL_APP_PASSWORD tidak di-set di environment' },
+      status: 'FAILED',
+    }).catch(() => {})
     return
   }
 
@@ -230,6 +239,15 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
   }
   if (!registration.contact_email) {
     console.warn(`[email] No contact_email for ${registrationNumber}, skipping success email`)
+    await logNotification({
+      templateId: null,
+      invoiceCode: registrationNumber,
+      recipient: 'none',
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_SUCCESS', registrationNumber },
+      responsePayload: { error: 'Peserta tidak mengisi email saat pendaftaran' },
+      status: 'FAILED',
+    }).catch(() => {})
     return
   }
 
@@ -547,11 +565,32 @@ export async function sendRegistrationPendingEmail(
   const gmailUser = process.env.GMAIL_USER
   if (!gmailUser || !process.env.GMAIL_APP_PASSWORD) {
     console.warn('[email] GMAIL_USER or GMAIL_APP_PASSWORD not set, skipping email')
+    await logNotification({
+      templateId: null,
+      invoiceCode: registrationNumber,
+      recipient: 'system',
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_PENDING', registrationNumber },
+      responsePayload: { error: 'GMAIL_USER atau GMAIL_APP_PASSWORD tidak di-set di environment' },
+      status: 'FAILED',
+    }).catch(() => {})
     return
   }
 
   const registration = await getRegistrationByNumber(registrationNumber)
-  if (!registration || !registration.contact_email) return
+  if (!registration) return
+  if (!registration.contact_email) {
+    await logNotification({
+      templateId: null,
+      invoiceCode: registrationNumber,
+      recipient: 'none',
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_PENDING', registrationNumber },
+      responsePayload: { error: 'Peserta tidak mengisi email saat pendaftaran' },
+      status: 'FAILED',
+    }).catch(() => {})
+    return
+  }
 
   const eventRows = await sql`
     SELECT name FROM events WHERE id = ${registration.event_id} LIMIT 1
