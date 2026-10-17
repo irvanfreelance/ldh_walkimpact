@@ -101,7 +101,7 @@ export async function PUT(
         community_name = COALESCE(${community_name ?? null}, community_name),
         paid_at = CASE
           WHEN ${status ?? null} = 'paid' AND paid_at IS NULL THEN NOW()
-          WHEN ${status ?? null} != 'paid' AND ${status ?? null} IS NOT NULL THEN NULL::timestamptz
+          WHEN ${status ?? null} != 'paid' THEN NULL::timestamptz
           ELSE paid_at
         END,
         updated_at = NOW()
