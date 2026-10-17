@@ -12,6 +12,7 @@ import {
 } from '@/lib/db/queries/registrations'
 import { triggerNotification } from '@/lib/db/queries/notifications'
 import { invalidateQuotaCache } from '@/lib/cache/redis'
+import { sendRegistrationSuccessEmail } from '@/lib/email/send-registration-email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -97,6 +98,8 @@ export async function POST(req: NextRequest) {
           va_number: payload.va_numbers?.[0]?.va_number || '-',
         },
       })
+
+      sendRegistrationSuccessEmail(order_id).catch(console.error)
 
       await invalidateQuotaCache()
     } else if (isExpiredOrCancelled) {

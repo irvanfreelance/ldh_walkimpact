@@ -339,6 +339,17 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      // Send pending payment email (fire-and-forget)
+      const { sendRegistrationPendingEmail } = await import('@/lib/email/send-registration-email')
+      sendRegistrationPendingEmail(regNumber, {
+        paymentType: data.paymentMethodCode,
+        bank: paymentResult.bank,
+        vaNumber: paymentResult.vaNumber,
+        snapToken: paymentResult.snapToken,
+        paymentUrl: paymentResult.paymentUrl,
+        qrUrl: paymentResult.qrString,
+      }).catch(console.error)
+
     } catch (followUpErr) {
       console.error(`Registration ${regNumber} created, but follow-up step '${step}' failed:`, followUpErr)
     }

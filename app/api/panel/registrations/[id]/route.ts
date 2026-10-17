@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import sql from '@/lib/db/client'
 import { invalidateQuotaCache } from '@/lib/cache/redis'
+import { sendRegistrationSuccessEmail } from '@/lib/email/send-registration-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -127,6 +128,11 @@ export async function PUT(
           `
         }
       }
+    }
+
+    // Send email confirmation when admin manually marks as paid
+    if (status === 'paid' && updateResult[0]?.status === 'paid') {
+      sendRegistrationSuccessEmail(updateResult[0].registration_number).catch(console.error)
     }
 
     // Always invalidate quota cache on update
