@@ -647,7 +647,14 @@ export default function NotificationsPage() {
                     </div>
 
                     {/* actions */}
-                    <div className="px-5 py-3 flex items-center justify-end gap-2">
+                    <div className="px-5 py-3 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => handleDelete(tpl.id)}
+                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                        title="Hapus template"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => openEmailEdit(tpl)}
                         className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#6DC230] hover:bg-[#5EAA28] text-white text-xs font-bold transition-colors"
