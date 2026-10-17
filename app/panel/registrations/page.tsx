@@ -364,7 +364,10 @@ export default function RegistrationsPage() {
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ status: 'paid' }),
                                     })
-                                    if (!res.ok) throw new Error('Gagal update status')
+                                    if (!res.ok) {
+                                      const errJson = await res.json().catch(() => ({}))
+                                      throw new Error(errJson.error || 'Gagal update status')
+                                    }
                                     fetchRegistrations()
                                   } catch (err: any) {
                                     alert(err.message || 'Gagal mengubah status')

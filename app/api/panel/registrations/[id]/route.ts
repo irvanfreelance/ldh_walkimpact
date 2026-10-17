@@ -94,14 +94,14 @@ export async function PUT(
     const updateResult = await sql`
       UPDATE registrations
       SET
-        status = COALESCE(${status}, status),
-        contact_name = COALESCE(${contact_name}, contact_name),
-        contact_whatsapp = COALESCE(${contact_whatsapp}, contact_whatsapp),
-        contact_email = COALESCE(${contact_email}, contact_email),
-        community_name = COALESCE(${community_name}, community_name),
+        status = COALESCE(${status ?? null}, status),
+        contact_name = COALESCE(${contact_name ?? null}, contact_name),
+        contact_whatsapp = COALESCE(${contact_whatsapp ?? null}, contact_whatsapp),
+        contact_email = COALESCE(${contact_email ?? null}, contact_email),
+        community_name = COALESCE(${community_name ?? null}, community_name),
         paid_at = CASE
-          WHEN ${status} = 'paid' AND paid_at IS NULL THEN NOW()
-          WHEN ${status} != 'paid' AND ${status} IS NOT NULL THEN NULL
+          WHEN ${status ?? null} = 'paid' AND paid_at IS NULL THEN NOW()
+          WHEN ${status ?? null} != 'paid' AND ${status ?? null} IS NOT NULL THEN NULL
           ELSE paid_at
         END,
         updated_at = NOW()
