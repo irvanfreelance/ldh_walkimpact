@@ -290,24 +290,36 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
   })
 
   const fromName = process.env.EMAIL_FROM_NAME || 'LAZ Darul Hikam'
-  await getTransporter().sendMail({
-    from: `"${fromName}" <${gmailUser}>`,
-    to: registration.contact_email,
-    subject,
-    html,
-  })
-
-  await logNotification({
-    templateId,
-    invoiceCode: registrationNumber,
-    recipient: registration.contact_email,
-    channel: 'EMAIL',
-    requestPayload: { trigger: 'EMAIL_INVOICE_SUCCESS', to: registration.contact_email, subject },
-    responsePayload: { status: 'SENT' },
-    status: 'SUCCESS',
-  })
-
-  console.log(`[email] Sent success email to ${registration.contact_email} for ${registrationNumber}`)
+  try {
+    await getTransporter().sendMail({
+      from: `"${fromName}" <${gmailUser}>`,
+      to: registration.contact_email,
+      subject,
+      html,
+    })
+    await logNotification({
+      templateId,
+      invoiceCode: registrationNumber,
+      recipient: registration.contact_email,
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_SUCCESS', to: registration.contact_email, subject },
+      responsePayload: { status: 'SENT' },
+      status: 'SUCCESS',
+    })
+    console.log(`[email] Sent success email to ${registration.contact_email} for ${registrationNumber}`)
+  } catch (err: any) {
+    console.error(`[email] Failed to send success email for ${registrationNumber}:`, err?.message || err)
+    await logNotification({
+      templateId,
+      invoiceCode: registrationNumber,
+      recipient: registration.contact_email,
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_SUCCESS', to: registration.contact_email, subject },
+      responsePayload: { error: err?.message || 'SMTP error' },
+      status: 'FAILED',
+    }).catch(() => {})
+    throw err
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -597,22 +609,34 @@ export async function sendRegistrationPendingEmail(
   })
 
   const fromName = process.env.EMAIL_FROM_NAME || 'LAZ Darul Hikam'
-  await getTransporter().sendMail({
-    from: `"${fromName}" <${gmailUser}>`,
-    to: registration.contact_email,
-    subject,
-    html,
-  })
-
-  await logNotification({
-    templateId,
-    invoiceCode: registrationNumber,
-    recipient: registration.contact_email,
-    channel: 'EMAIL',
-    requestPayload: { trigger: 'EMAIL_INVOICE_PENDING', to: registration.contact_email, subject },
-    responsePayload: { status: 'SENT' },
-    status: 'SUCCESS',
-  })
-
-  console.log(`[email] Sent pending email to ${registration.contact_email} for ${registrationNumber}`)
+  try {
+    await getTransporter().sendMail({
+      from: `"${fromName}" <${gmailUser}>`,
+      to: registration.contact_email,
+      subject,
+      html,
+    })
+    await logNotification({
+      templateId,
+      invoiceCode: registrationNumber,
+      recipient: registration.contact_email,
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_PENDING', to: registration.contact_email, subject },
+      responsePayload: { status: 'SENT' },
+      status: 'SUCCESS',
+    })
+    console.log(`[email] Sent pending email to ${registration.contact_email} for ${registrationNumber}`)
+  } catch (err: any) {
+    console.error(`[email] Failed to send pending email for ${registrationNumber}:`, err?.message || err)
+    await logNotification({
+      templateId,
+      invoiceCode: registrationNumber,
+      recipient: registration.contact_email,
+      channel: 'EMAIL',
+      requestPayload: { trigger: 'EMAIL_INVOICE_PENDING', to: registration.contact_email, subject },
+      responsePayload: { error: err?.message || 'SMTP error' },
+      status: 'FAILED',
+    }).catch(() => {})
+    throw err
+  }
 }

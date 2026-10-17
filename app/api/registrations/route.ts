@@ -34,7 +34,10 @@ const BodySchema = z.object({
     .min(3, 'Nama lengkap minimal 3 karakter')
     .max(100, 'Nama lengkap maksimal 100 karakter')
     .regex(/^[a-zA-Z\s'.]{3,100}$/, 'Nama hanya boleh berupa huruf, spasi, titik, atau petik'),
-  contactEmail: z.string().trim().email('Format email tidak valid').optional().nullable(),
+  contactEmail: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    z.string().trim().email('Format email tidak valid').optional()
+  ),
   contactWhatsapp: z
     .string()
     .trim()
