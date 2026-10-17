@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import { User, MessageSquare, Users, Ticket, Building, Minus, Plus } from 'lucide-react'
+import { User, MessageSquare, Mail, Users, Ticket, Building, Minus, Plus } from 'lucide-react'
 import { ParticipantCategory, ShirtSize } from '@/lib/db/queries/events'
 import { ShirtSizePicker } from './ShirtSizePicker'
 import { SizeChartButton } from './SizeChartModal'
@@ -143,7 +143,31 @@ export function StepDataPeserta({
         </p>
       </div>
 
-      {/* 3. Kategori Peserta */}
+      {/* 3. Email (Opsional) */}
+      <div className="space-y-1.5">
+        <label className="block text-xs sm:text-sm font-bold text-brand-text-dark">
+          Email{' '}
+          <span className="text-xs text-brand-text-muted font-normal">(Opsional)</span>
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-text-muted">
+            <Mail className="w-5 h-5" />
+          </div>
+          <input
+            type="email"
+            value={formData.contactEmail || ''}
+            onChange={(e) => onChange({ contactEmail: e.target.value })}
+            placeholder="Contoh: nama@email.com"
+            maxLength={100}
+            className="w-full pl-11 pr-4 py-3 bg-white border border-brand-light-gray rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all"
+          />
+        </div>
+        <p className="text-[11px] text-brand-text-muted">
+          Digunakan untuk menerima notifikasi email tiket dan konfirmasi pembayaran.
+        </p>
+      </div>
+
+      {/* 4. Kategori Peserta */}
       <div className="space-y-1.5">
         <label className="block text-xs sm:text-sm font-bold text-brand-text-dark">
           Kategori Peserta <span className="text-red-500">*</span>

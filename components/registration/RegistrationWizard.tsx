@@ -59,6 +59,7 @@ export function RegistrationWizard({
   const [formData, setFormData] = useState<StepDataPesertaFormData>({
     contactName: '',
     contactWhatsapp: '',
+    contactEmail: '',
     categoryId: categories[0]?.id ? Number(categories[0].id) : null,
     ticketQty: 1,
     shirtSizeIds: [Number(shirtSizes[1]?.id || shirtSizes[0]?.id || 1)],
@@ -77,6 +78,7 @@ export function RegistrationWizard({
           setFormData((prev) => ({
             contactName: typeof parsed.contactName === 'string' ? parsed.contactName : prev.contactName,
             contactWhatsapp: typeof parsed.contactWhatsapp === 'string' ? parsed.contactWhatsapp : prev.contactWhatsapp,
+            contactEmail: typeof parsed.contactEmail === 'string' ? parsed.contactEmail : prev.contactEmail,
             categoryId: parsed.categoryId ? Number(parsed.categoryId) : prev.categoryId,
             ticketQty: parsed.ticketQty ? Number(parsed.ticketQty) : prev.ticketQty,
             shirtSizeIds: Array.isArray(parsed.shirtSizeIds) && parsed.shirtSizeIds.length > 0 ? parsed.shirtSizeIds : prev.shirtSizeIds,
