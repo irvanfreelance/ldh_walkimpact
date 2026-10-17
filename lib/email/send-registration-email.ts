@@ -224,7 +224,14 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
   }
 
   const registration = await getRegistrationByNumber(registrationNumber)
-  if (!registration || !registration.contact_email) return
+  if (!registration) {
+    console.warn(`[email] Registration not found: ${registrationNumber}`)
+    return
+  }
+  if (!registration.contact_email) {
+    console.warn(`[email] No contact_email for ${registrationNumber}, skipping success email`)
+    return
+  }
 
   const eventRows = await sql`
     SELECT name, end_time, assembly_time, start_time, event_date, venue_name, rpc_location_note, contact_name

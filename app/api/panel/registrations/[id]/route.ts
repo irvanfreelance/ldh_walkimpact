@@ -132,7 +132,10 @@ export async function PUT(
 
     // Send email confirmation when admin manually marks as paid
     if (status === 'paid' && updateResult[0]?.status === 'paid') {
-      sendRegistrationSuccessEmail(updateResult[0].registration_number).catch(console.error)
+      console.log(`[email] Triggering success email for ${updateResult[0].registration_number}`)
+      sendRegistrationSuccessEmail(updateResult[0].registration_number).catch((err) => {
+        console.error(`[email] Failed to send success email for ${updateResult[0].registration_number}:`, err)
+      })
     }
 
     // Always invalidate quota cache on update
