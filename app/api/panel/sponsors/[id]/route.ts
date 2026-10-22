@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { writeFile, unlink } from 'fs/promises'
-import { join } from 'path'
-import { randomUUID } from 'crypto'
 import sql from '@/lib/db/client'
 
 export const dynamic = 'force-dynamic'
+
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
+const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
 export async function PUT(
   req: Request,
@@ -22,7 +22,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
     }
 
-    const [existing] = await sql`SELECT * FROM sponsors WHERE id = ${id}`
+    const [existing] = await sql`SELECT logo_url FROM sponsors WHERE id = ${id}`
     if (!existing) {
       return NextResponse.json({ error: 'Sponsor tidak ditemukan' }, { status: 404 })
     }
@@ -30,23 +30,15 @@ export async function PUT(
     let logoUrl = existing.logo_url
 
     if (file && file.size > 0) {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-      const allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'svg']
-      if (!allowedExts.includes(ext)) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json({ error: 'Format file tidak didukung.' }, { status: 400 })
       }
-
-      const filename = `${randomUUID()}.${ext}`
-      const uploadDir = join(process.cwd(), 'public', 'uploads', 'sponsors')
-      const bytes = await file.arrayBuffer()
-      await writeFile(join(uploadDir, filename), Buffer.from(bytes))
-      logoUrl = `/uploads/sponsors/${filename}`
-
-      // delete old file if it's in our uploads directory
-      if (existing.logo_url?.startsWith('/uploads/sponsors/')) {
-        const oldPath = join(process.cwd(), 'public', existing.logo_url)
-        unlink(oldPath).catch(() => {})
+      if (file.size > MAX_SIZE) {
+        return NextResponse.json({ error: 'Ukuran file maksimal 2MB.' }, { status: 400 })
       }
+      const bytes = await file.arrayBuffer()
+      const base64 = Buffer.from(bytes).toString('base64')
+      logoUrl = `data:${file.type};base64,${base64}`
     }
 
     const [row] = await sql`
@@ -69,17 +61,12 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const [existing] = await sql`SELECT * FROM sponsors WHERE id = ${id}`
+    const [existing] = await sql`SELECT id FROM sponsors WHERE id = ${id}`
     if (!existing) {
       return NextResponse.json({ error: 'Sponsor tidak ditemukan' }, { status: 404 })
     }
 
     await sql`DELETE FROM sponsors WHERE id = ${id}`
-
-    if (existing.logo_url?.startsWith('/uploads/sponsors/')) {
-      const filePath = join(process.cwd(), 'public', existing.logo_url)
-      unlink(filePath).catch(() => {})
-    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

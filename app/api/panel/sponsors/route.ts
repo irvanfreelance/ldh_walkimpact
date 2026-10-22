@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
-import { randomUUID } from 'crypto'
 import sql from '@/lib/db/client'
 
 export const dynamic = 'force-dynamic'
+
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
+const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
 export async function GET() {
   try {
@@ -26,18 +26,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Nama dan logo wajib diisi' }, { status: 400 })
     }
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-    const allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'svg']
-    if (!allowedExts.includes(ext)) {
+    if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: 'Format file tidak didukung. Gunakan PNG, JPG, WEBP, atau SVG.' }, { status: 400 })
     }
 
-    const filename = `${randomUUID()}.${ext}`
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'sponsors')
-    const bytes = await file.arrayBuffer()
-    await writeFile(join(uploadDir, filename), Buffer.from(bytes))
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'Ukuran file maksimal 2MB.' }, { status: 400 })
+    }
 
-    const logoUrl = `/uploads/sponsors/${filename}`
+    const bytes = await file.arrayBuffer()
+    const base64 = Buffer.from(bytes).toString('base64')
+    const logoUrl = `data:${file.type};base64,${base64}`
 
     const [row] = await sql`
       INSERT INTO sponsors (name, logo_url, display_order, is_active)
