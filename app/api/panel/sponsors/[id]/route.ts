@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
+const VALID_ROLES = ['penyelenggara', 'pendukung']
 
 export async function PUT(
   req: Request,
@@ -14,12 +15,17 @@ export async function PUT(
     const { id } = await params
     const formData = await req.formData()
     const name = formData.get('name') as string
+    const role = (formData.get('role') as string) || 'pendukung'
     const displayOrder = parseInt((formData.get('display_order') as string) || '0', 10)
     const isActive = formData.get('is_active') === 'true'
     const file = formData.get('logo') as File | null
 
     if (!name) {
       return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
+    }
+
+    if (!VALID_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Peran tidak valid' }, { status: 400 })
     }
 
     const [existing] = await sql`SELECT logo_url FROM sponsors WHERE id = ${id}`
@@ -43,7 +49,7 @@ export async function PUT(
 
     const [row] = await sql`
       UPDATE sponsors
-      SET name = ${name}, logo_url = ${logoUrl}, display_order = ${displayOrder}, is_active = ${isActive}
+      SET name = ${name}, logo_url = ${logoUrl}, role = ${role}, display_order = ${displayOrder}, is_active = ${isActive}
       WHERE id = ${id}
       RETURNING *
     `

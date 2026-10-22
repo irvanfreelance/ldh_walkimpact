@@ -5,14 +5,18 @@ import sql from '@/lib/db/client'
 
 async function getActiveSponsors() {
   try {
-    return await sql`SELECT id, name, logo_url FROM sponsors WHERE is_active = true ORDER BY display_order ASC, id ASC`
+    return await sql`SELECT id, name, logo_url, role FROM sponsors WHERE is_active = true ORDER BY display_order ASC, id ASC`
   } catch {
     return []
   }
 }
 
+type SponsorRow = { id: number; name: string; logo_url: string; role: string }
+
 export async function Footer() {
-  const sponsors = await getActiveSponsors()
+  const all = (await getActiveSponsors()) as SponsorRow[]
+  const penyelenggara = all.filter((s) => s.role === 'penyelenggara')
+  const pendukung = all.filter((s) => s.role === 'pendukung')
   return (
     <footer className="bg-[#0F281E] text-white relative overflow-hidden border-t border-white/10">
       {/* Decorative dot pattern */}
@@ -31,23 +35,41 @@ export async function Footer() {
                 className="h-10 w-auto object-contain brightness-0 invert"
               />
             </div>
-            <p className="text-xs text-white/70 mb-5">
-              Diselenggarakan oleh:
-            </p>
-            {sponsors.length > 0 && (
-              <div className="flex flex-wrap items-center gap-4 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm">
-                {(sponsors as { id: number; name: string; logo_url: string }[]).map((s) => (
-                  <Image
-                    key={s.id}
-                    src={s.logo_url}
-                    alt={s.name}
-                    width={80}
-                    height={30}
-                    className="h-6 w-auto object-contain brightness-0 invert"
-                    unoptimized
-                  />
-                ))}
-              </div>
+            {penyelenggara.length > 0 && (
+              <>
+                <p className="text-xs text-white/70 mb-2">Diselenggarakan oleh:</p>
+                <div className="flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm mb-4">
+                  {penyelenggara.map((s) => (
+                    <Image
+                      key={s.id}
+                      src={s.logo_url}
+                      alt={s.name}
+                      width={80}
+                      height={30}
+                      className="h-6 w-auto object-contain brightness-0 invert"
+                      unoptimized
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            {pendukung.length > 0 && (
+              <>
+                <p className="text-xs text-white/70 mb-2">Didukung Oleh:</p>
+                <div className="flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm">
+                  {pendukung.map((s) => (
+                    <Image
+                      key={s.id}
+                      src={s.logo_url}
+                      alt={s.name}
+                      width={80}
+                      height={30}
+                      className="h-5 w-auto object-contain brightness-0 invert"
+                      unoptimized
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
 

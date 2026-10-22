@@ -7,7 +7,7 @@ interface NavbarWrapperProps {
 
 async function getActiveSponsors() {
   try {
-    return await sql`SELECT id, name, logo_url FROM sponsors WHERE is_active = true ORDER BY display_order ASC, id ASC`
+    return await sql`SELECT id, name, logo_url FROM sponsors WHERE is_active = true AND role = 'penyelenggara' ORDER BY display_order ASC, id ASC`
   } catch {
     return []
   }

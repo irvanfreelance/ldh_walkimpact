@@ -8,6 +8,7 @@ interface Sponsor {
   id: number
   name: string
   logo_url: string
+  role: 'penyelenggara' | 'pendukung'
   display_order: number
   is_active: boolean
   created_at: string
@@ -17,6 +18,7 @@ type ModalMode = 'add' | 'edit'
 
 interface FormState {
   name: string
+  role: 'penyelenggara' | 'pendukung'
   display_order: string
   is_active: boolean
   logo: File | null
@@ -25,6 +27,7 @@ interface FormState {
 
 const defaultForm: FormState = {
   name: '',
+  role: 'pendukung',
   display_order: '0',
   is_active: true,
   logo: null,
@@ -78,6 +81,7 @@ export default function SponsorsPage() {
   const openEdit = (sponsor: Sponsor) => {
     setForm({
       name: sponsor.name,
+      role: sponsor.role,
       display_order: String(sponsor.display_order),
       is_active: sponsor.is_active,
       logo: null,
@@ -109,6 +113,7 @@ export default function SponsorsPage() {
     try {
       const fd = new FormData()
       fd.append('name', form.name.trim())
+      fd.append('role', form.role)
       fd.append('display_order', form.display_order || '0')
       fd.append('is_active', String(form.is_active))
       if (form.logo) fd.append('logo', form.logo)
@@ -213,6 +218,7 @@ export default function SponsorsPage() {
               <tr>
                 <th className="text-left px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Logo</th>
                 <th className="text-left px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Nama</th>
+                <th className="text-center px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Peran</th>
                 <th className="text-center px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Urutan</th>
                 <th className="text-center px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Status</th>
                 <th className="text-right px-5 py-3 font-semibold text-[#4A5D40] text-xs uppercase tracking-wide">Aksi</th>
@@ -234,6 +240,15 @@ export default function SponsorsPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 font-medium text-[#1A2714]">{sponsor.name}</td>
+                  <td className="px-5 py-3 text-center">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      sponsor.role === 'penyelenggara'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {sponsor.role === 'penyelenggara' ? 'Penyelenggara' : 'Pendukung'}
+                    </span>
+                  </td>
                   <td className="px-5 py-3 text-center text-[#5A6E51]">{sponsor.display_order}</td>
                   <td className="px-5 py-3 text-center">
                     <button
@@ -332,6 +347,21 @@ export default function SponsorsPage() {
                   placeholder="cth. LAZ Darul Hikam"
                   className="w-full px-3 py-2 border border-[#D1D9CC] rounded-xl text-sm focus:outline-none focus:border-[#3A7D0A] focus:ring-2 focus:ring-[#3A7D0A]/10"
                 />
+              </div>
+
+              {/* Peran */}
+              <div>
+                <label className="block text-xs font-semibold text-[#4A5D40] mb-1.5">
+                  Peran Sponsor <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as FormState['role'] }))}
+                  className="w-full px-3 py-2 border border-[#D1D9CC] rounded-xl text-sm focus:outline-none focus:border-[#3A7D0A] focus:ring-2 focus:ring-[#3A7D0A]/10 bg-white"
+                >
+                  <option value="pendukung">Pendukung — tampil di "Didukung Oleh"</option>
+                  <option value="penyelenggara">Penyelenggara — tampil di "Diselenggarakan oleh" + Navbar</option>
+                </select>
               </div>
 
               {/* Urutan */}

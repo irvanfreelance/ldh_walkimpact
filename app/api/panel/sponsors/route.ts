@@ -15,15 +15,22 @@ export async function GET() {
   }
 }
 
+const VALID_ROLES = ['penyelenggara', 'pendukung']
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData()
     const name = formData.get('name') as string
+    const role = (formData.get('role') as string) || 'pendukung'
     const displayOrder = parseInt((formData.get('display_order') as string) || '0', 10)
     const file = formData.get('logo') as File | null
 
     if (!name || !file) {
       return NextResponse.json({ error: 'Nama dan logo wajib diisi' }, { status: 400 })
+    }
+
+    if (!VALID_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Peran tidak valid' }, { status: 400 })
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -39,8 +46,8 @@ export async function POST(req: Request) {
     const logoUrl = `data:${file.type};base64,${base64}`
 
     const [row] = await sql`
-      INSERT INTO sponsors (name, logo_url, display_order, is_active)
-      VALUES (${name}, ${logoUrl}, ${displayOrder}, true)
+      INSERT INTO sponsors (name, logo_url, role, display_order, is_active)
+      VALUES (${name}, ${logoUrl}, ${role}, ${displayOrder}, true)
       RETURNING *
     `
 
