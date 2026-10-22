@@ -1,8 +1,18 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import sql from '@/lib/db/client'
 
-export function Footer() {
+async function getActiveSponsors() {
+  try {
+    return await sql`SELECT id, name, logo_url FROM sponsors WHERE is_active = true ORDER BY display_order ASC, id ASC`
+  } catch {
+    return []
+  }
+}
+
+export async function Footer() {
+  const sponsors = await getActiveSponsors()
   return (
     <footer className="bg-[#0F281E] text-white relative overflow-hidden border-t border-white/10">
       {/* Decorative dot pattern */}
@@ -24,29 +34,21 @@ export function Footer() {
             <p className="text-xs text-white/70 mb-5">
               Diselenggarakan oleh:
             </p>
-            <div className="flex flex-wrap items-center gap-4 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm">
-              <Image
-                src="/images/logo-laz-darul-hikam.png"
-                alt="LAZ Darul Hikam"
-                width={80}
-                height={30}
-                className="h-6 w-auto object-contain brightness-0 invert"
-              />
-              <Image
-                src="/images/logo-pasar-modern-batununggal-indah.png"
-                alt="Pasar Modern"
-                width={80}
-                height={30}
-                className="h-5 w-auto object-contain brightness-0 invert"
-              />
-              <Image
-                src="/images/logo-batununggal-indah-club.png"
-                alt="Batununggal Indah Club"
-                width={70}
-                height={30}
-                className="h-5 w-auto object-contain brightness-0 invert"
-              />
-            </div>
+            {sponsors.length > 0 && (
+              <div className="flex flex-wrap items-center gap-4 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm">
+                {(sponsors as { id: number; name: string; logo_url: string }[]).map((s) => (
+                  <Image
+                    key={s.id}
+                    src={s.logo_url}
+                    alt={s.name}
+                    width={80}
+                    height={30}
+                    className="h-6 w-auto object-contain brightness-0 invert"
+                    unoptimized
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Col 2: Navigation Links */}

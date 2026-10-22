@@ -262,3 +262,13 @@ export const registrationParticipants = pgTable('registration_participants', {
 }, (t) => [
   unique().on(t.registrationId, t.slotNumber),
 ])
+
+// 17. Sponsors
+export const sponsors = pgTable('sponsors', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  logoUrl: text('logo_url').notNull(),
+  displayOrder: integer('display_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})

@@ -5,11 +5,18 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 
-interface NavbarProps {
-  registrationClosed?: boolean
+export interface SponsorItem {
+  id: number
+  name: string
+  logo_url: string
 }
 
-export function Navbar({ registrationClosed = false }: NavbarProps) {
+interface NavbarProps {
+  registrationClosed?: boolean
+  sponsors?: SponsorItem[]
+}
+
+export function Navbar({ registrationClosed = false, sponsors = [] }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -49,29 +56,21 @@ export function Navbar({ registrationClosed = false }: NavbarProps) {
 
           {/* Right: Partner Logos & CTA Button */}
           <div className="hidden md:flex items-center space-x-4">
-            <div className="flex items-center space-x-3 pr-2 border-r border-brand-light-gray">
-              <Image
-                src="/images/logo-laz-darul-hikam.png"
-                alt="LAZ Darul Hikam"
-                width={70}
-                height={28}
-                className="h-7 w-auto object-contain"
-              />
-              <Image
-                src="/images/logo-pasar-modern-batununggal-indah.png"
-                alt="Pasar Modern Batununggal Indah"
-                width={80}
-                height={28}
-                className="h-6 w-auto object-contain"
-              />
-              <Image
-                src="/images/logo-batununggal-indah-club.png"
-                alt="Batununggal Indah Club"
-                width={65}
-                height={28}
-                className="h-6 w-auto object-contain"
-              />
-            </div>
+            {sponsors.length > 0 && (
+              <div className="flex items-center space-x-3 pr-2 border-r border-brand-light-gray">
+                {sponsors.map((s) => (
+                  <Image
+                    key={s.id}
+                    src={s.logo_url}
+                    alt={s.name}
+                    width={80}
+                    height={28}
+                    className="h-7 w-auto object-contain"
+                    unoptimized
+                  />
+                ))}
+              </div>
+            )}
 
             {registrationClosed ? (
               <button
@@ -159,29 +158,21 @@ export function Navbar({ registrationClosed = false }: NavbarProps) {
             </Link>
           </nav>
 
-          <div className="pt-3 border-t border-brand-light-gray flex items-center justify-around">
-            <Image
-              src="/images/logo-laz-darul-hikam.png"
-              alt="LAZ Darul Hikam"
-              width={70}
-              height={28}
-              className="h-6 w-auto object-contain"
-            />
-            <Image
-              src="/images/logo-pasar-modern-batununggal-indah.png"
-              alt="Pasar Modern Batununggal Indah"
-              width={75}
-              height={28}
-              className="h-6 w-auto object-contain"
-            />
-            <Image
-              src="/images/logo-batununggal-indah-club.png"
-              alt="Batununggal Indah Club"
-              width={60}
-              height={28}
-              className="h-6 w-auto object-contain"
-            />
-          </div>
+          {sponsors.length > 0 && (
+            <div className="pt-3 border-t border-brand-light-gray flex items-center justify-around">
+              {sponsors.map((s) => (
+                <Image
+                  key={s.id}
+                  src={s.logo_url}
+                  alt={s.name}
+                  width={70}
+                  height={28}
+                  className="h-6 w-auto object-contain"
+                  unoptimized
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </header>

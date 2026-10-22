@@ -1,4 +1,4 @@
-import { Navbar } from '@/components/layout/Navbar'
+import { NavbarWrapper as Navbar } from '@/components/layout/NavbarWrapper'
 import { Footer } from '@/components/layout/Footer'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { ImpactSection } from '@/components/sections/ImpactSection'

@@ -26,6 +26,7 @@ import {
   UserCog,
   LogOut,
   User as UserIcon,
+  Star,
 } from 'lucide-react'
 
 interface PanelLayoutProps {
@@ -97,6 +98,12 @@ export default function PanelLayout({ children }: PanelLayoutProps) {
       href: '/panel/users',
       icon: UserCog,
       active: pathname.startsWith('/panel/users'),
+    },
+    {
+      label: 'Sponsor',
+      href: '/panel/sponsors',
+      icon: Star,
+      active: pathname.startsWith('/panel/sponsors'),
     },
   ]
 
