@@ -38,7 +38,7 @@ export async function Footer() {
             {penyelenggara.length > 0 && (
               <>
                 <p className="text-xs text-white/70 mb-2">Diselenggarakan oleh:</p>
-                <div className="flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm mb-4">
+                <div className="inline-flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm w-fit mb-4">
                   {penyelenggara.map((s) => (
                     <Image
                       key={s.id}
@@ -56,7 +56,7 @@ export async function Footer() {
             {pendukung.length > 0 && (
               <>
                 <p className="text-xs text-white/70 mb-2">Didukung Oleh:</p>
-                <div className="flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm max-w-sm">
+                <div className="flex flex-wrap items-center gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm">
                   {pendukung.map((s) => (
                     <Image
                       key={s.id}
