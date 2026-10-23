@@ -65,7 +65,7 @@ export function Navbar({ registrationClosed = false, sponsors = [] }: NavbarProp
                     alt={s.name}
                     width={80}
                     height={28}
-                    className="h-7 w-auto object-contain"
+                    className="h-10 w-auto object-contain"
                     unoptimized
                   />
                 ))}
