@@ -46,6 +46,8 @@ export async function PUT(req: Request) {
       contact_name,
       contact_whatsapp,
       is_active,
+      registration_opens_at,
+      registration_closes_at,
     } = body
 
     const eventId = id ? parseInt(id, 10) : 1
@@ -69,6 +71,8 @@ export async function PUT(req: Request) {
         contact_name = COALESCE(${contact_name}, contact_name),
         contact_whatsapp = COALESCE(${contact_whatsapp}, contact_whatsapp),
         is_active = COALESCE(${is_active}, is_active),
+        registration_opens_at = ${registration_opens_at || null},
+        registration_closes_at = ${registration_closes_at || null},
         updated_at = NOW()
       WHERE id = ${eventId}
       RETURNING *

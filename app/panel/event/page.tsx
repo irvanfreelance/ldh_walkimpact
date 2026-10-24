@@ -11,6 +11,7 @@ import {
   AlertCircle,
   RefreshCw,
   ExternalLink,
+  ToggleLeft,
 } from 'lucide-react'
 import { RichTextEditor } from '@/components/editor/RichTextEditor'
 
@@ -32,6 +33,8 @@ export default function EventSettingsPage() {
     contact_name: '',
     contact_whatsapp: '',
     is_active: true,
+    registration_opens_at: '',
+    registration_closes_at: '',
   })
 
   const [loading, setLoading] = useState(true)
@@ -52,10 +55,14 @@ export default function EventSettingsPage() {
       const res = await fetch('/api/panel/event')
       if (!res.ok) throw new Error('Gagal memuat pengaturan event')
       const json = await res.json()
+      const toDatetimeLocal = (val: string | null) =>
+        val ? new Date(val).toISOString().slice(0, 16) : ''
       setFormData({
         ...json,
         event_date: json.event_date ? json.event_date.slice(0, 10) : '',
         max_quota: Number(json.max_quota) || 750,
+        registration_opens_at: toDatetimeLocal(json.registration_opens_at),
+        registration_closes_at: toDatetimeLocal(json.registration_closes_at),
       })
     } catch (err: any) {
       setNotification({ show: true, message: err.message, type: 'error' })
@@ -358,6 +365,62 @@ export default function EventSettingsPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Pendaftaran */}
+        <div className="bg-white p-6 rounded-2xl border border-[#E2E8DF] shadow-xs space-y-4">
+          <h2 className="text-base font-bold text-[#1A2714] border-b pb-3 flex items-center gap-2">
+            <ToggleLeft className="w-4 h-4 text-[#3A7D0A]" />
+            <span>Pendaftaran</span>
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                Dibuka Pada
+              </label>
+              <input
+                type="datetime-local"
+                name="registration_opens_at"
+                value={formData.registration_opens_at || ''}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#6DC230] focus:outline-none"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">Kosongkan jika tidak ada batasan waktu buka</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                Ditutup Pada
+              </label>
+              <input
+                type="datetime-local"
+                name="registration_closes_at"
+                value={formData.registration_closes_at || ''}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#6DC230] focus:outline-none"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">Lewat waktu ini, tombol daftar otomatis nonaktif</p>
+            </div>
+          </div>
+
+          {/* Status indicator */}
+          {formData.registration_closes_at && (
+            <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg w-fit ${
+              new Date(formData.registration_closes_at) > new Date()
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                new Date(formData.registration_closes_at) > new Date()
+                  ? 'bg-emerald-500'
+                  : 'bg-red-500'
+              }`} />
+              {new Date(formData.registration_closes_at) > new Date()
+                ? 'Pendaftaran sedang DIBUKA'
+                : 'Pendaftaran sedang DITUTUP'}
+            </div>
+          )}
         </div>
 
         {/* Contact Panitia */}
