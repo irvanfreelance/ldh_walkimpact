@@ -66,7 +66,7 @@ export function PaymentInstructionsCard({
   const manualBankName =
     bank || (codeUpper.includes('BCA') ? 'Bank BCA' : codeUpper.includes('MANDIRI') ? 'Bank Mandiri' : 'Bank Transfer')
   const manualAccountNumber =
-    vaNumber || (codeUpper.includes('BCA') ? '7772445588' : '1310012345678')
+    vaNumber || (codeUpper.includes('BCA') ? '00804000200' : '1300077099011')
   const manualAccountHolder = 'LAZ Darul Hikam'
 
   const isQris =
