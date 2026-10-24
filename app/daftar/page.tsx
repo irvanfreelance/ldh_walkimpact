@@ -1,6 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import Script from 'next/script'
 import { ArrowLeft } from 'lucide-react'
 import {
   getActiveEvent,
@@ -67,8 +68,19 @@ export default async function DaftarPage() {
   ])
   const logoSrc = logoUrl || '/images/logo-walk-impact.png'
 
+  const snapUrl = process.env.MIDTRANS_IS_PRODUCTION === 'true'
+    ? 'https://app.midtrans.com/snap/snap.js'
+    : 'https://app.sandbox.midtrans.com/snap/snap.js'
+  const clientKey =
+    process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ||
+    process.env.MIDTRANS_CLIENT_KEY ||
+    ''
+
   return (
     <div className="min-h-screen bg-brand-off-white flex flex-col">
+      {clientKey ? (
+        <Script src={snapUrl} data-client-key={clientKey} strategy="lazyOnload" />
+      ) : null}
       {/* Top Header */}
       <header className="bg-white border-b border-brand-light-gray py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">

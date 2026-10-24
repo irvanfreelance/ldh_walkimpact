@@ -11,40 +11,11 @@ import { FAQSection } from '@/components/sections/FAQSection'
 import { getActiveEvent, ActiveEvent } from '@/lib/db/queries/events'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
 import { isRegistrationClosed } from '@/lib/utils/registration'
-import { getRedis } from '@/lib/cache/redis'
-import { CACHE_KEYS, EVENT_DATA_TTL } from '@/lib/cache/keys'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 300 // 5 minutes ISR
+export const revalidate = 300
 
 export default async function HomePage() {
-  let event: ActiveEvent | null = null
-
-  try {
-    const redis = getRedis()
-    if (redis) {
-      const cached = await redis.get<ActiveEvent>(CACHE_KEYS.EVENT_DATA)
-      if (cached) {
-        event = cached
-      }
-    }
-  } catch (e) {
-    console.warn('Redis cache read failed, falling back to DB:', e)
-  }
-
-  if (!event) {
-    event = await getActiveEvent()
-    if (event) {
-      try {
-        const redis = getRedis()
-        if (redis) {
-          await redis.set(CACHE_KEYS.EVENT_DATA, event, { ex: EVENT_DATA_TTL })
-        }
-      } catch (e) {
-        console.warn('Redis cache write failed:', e)
-      }
-    }
-  }
+  const event: ActiveEvent | null = await getActiveEvent()
 
   if (!event) {
     return (

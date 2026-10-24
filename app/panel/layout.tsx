@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { SessionProvider, useSession, signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
   Users,
@@ -32,7 +32,7 @@ interface PanelLayoutProps {
   children: React.ReactNode
 }
 
-export default function PanelLayout({ children }: PanelLayoutProps) {
+function PanelLayout({ children }: PanelLayoutProps) {
   const { data: session } = useSession()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -355,5 +355,13 @@ export default function PanelLayout({ children }: PanelLayoutProps) {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function PanelLayoutWithSession({ children }: PanelLayoutProps) {
+  return (
+    <SessionProvider>
+      <PanelLayout>{children}</PanelLayout>
+    </SessionProvider>
   )
 }

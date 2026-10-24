@@ -67,8 +67,9 @@ export function Navbar({ registrationClosed = false, sponsors = [], logoUrl = '/
                     alt={s.name}
                     width={80}
                     height={28}
+                    sizes="80px"
                     className="h-10 w-auto object-contain"
-                    unoptimized
+                    unoptimized={s.logo_url.startsWith('data:')}
                   />
                 ))}
               </div>
@@ -169,8 +170,9 @@ export function Navbar({ registrationClosed = false, sponsors = [], logoUrl = '/
                   alt={s.name}
                   width={70}
                   height={28}
+                  sizes="70px"
                   className="h-6 w-auto object-contain"
-                  unoptimized
+                  unoptimized={s.logo_url.startsWith('data:')}
                 />
               ))}
             </div>

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import './globals.css'
 
 const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.darulhikam.or.id'
@@ -62,33 +61,15 @@ export const metadata: Metadata = {
   },
 }
 
-import { AuthProvider } from '@/components/providers/AuthProvider'
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true'
-  const snapUrl = isProduction
-    ? 'https://app.midtrans.com/snap/snap.js'
-    : 'https://app.sandbox.midtrans.com/snap/snap.js'
-  const clientKey =
-    process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ||
-    process.env.MIDTRANS_CLIENT_KEY ||
-    'SB-Mid-client-test'
-
   return (
     <html lang="id" className="h-full scroll-smooth">
-      <head>
-        <Script
-          src={snapUrl}
-          data-client-key={clientKey}
-          strategy="lazyOnload"
-        />
-      </head>
-      <body className="min-h-full flex flex-col font-sans bg-white text-brand-text-dark antialiased">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-full flex flex-col bg-white text-brand-text-dark antialiased">
+        {children}
       </body>
     </html>
   )

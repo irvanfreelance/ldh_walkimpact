@@ -52,8 +52,9 @@ export async function Footer() {
                       alt={s.name}
                       width={80}
                       height={30}
+                      sizes="80px"
                       className="h-6 w-auto object-contain brightness-0 invert"
-                      unoptimized
+                      unoptimized={s.logo_url.startsWith('data:')}
                     />
                   ))}
                 </div>
@@ -70,8 +71,9 @@ export async function Footer() {
                       alt={s.name}
                       width={80}
                       height={30}
+                      sizes="80px"
                       className="h-5 w-auto object-contain brightness-0 invert"
-                      unoptimized
+                      unoptimized={s.logo_url.startsWith('data:')}
                     />
                   ))}
                 </div>

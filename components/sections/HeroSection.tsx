@@ -28,20 +28,16 @@ export function HeroSection({ event, registrationClosed = false }: HeroSectionPr
 
   return (
     <section className="relative overflow-hidden bg-[#0A1F16] text-white pt-8 pb-16 lg:py-20 min-h-[580px] flex items-center">
-      {/* Background Graphic Image from Asset */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/background-registration-success.png"
-          alt="Walk Impact 2026 Atmosphere"
+          src="/images/background-registration-success.jpg"
+          alt=""
           fill
           priority
           sizes="100vw"
           className="object-cover object-center"
-          quality={95}
         />
-        {/* Rich emerald gradient overlay for brand aesthetic & high contrast text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F281E]/95 via-[#0F281E]/80 to-[#1B4D3E]/65" />
-        {/* Subtle dot overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F281E]/90 via-[#0F281E]/55 to-[#1B4D3E]/20" />
         <div className="absolute inset-0 bg-dot-white opacity-10 pointer-events-none" />
       </div>
 
@@ -126,16 +122,15 @@ export function HeroSection({ event, registrationClosed = false }: HeroSectionPr
           {/* Right Column: Hero Illustration */}
           <div className="lg:col-span-5 relative flex justify-center lg:justify-end">
             <div className="relative w-full max-w-lg lg:max-w-none">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-brand-green-dark/40">
-                <Image
-                  src="/images/hero-community-walk.png"
-                  alt="Komunitas Berjalan Bersama Walk Impact 2026"
-                  width={600}
-                  height={600}
-                  priority
-                  className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700"
-                />
-              </div>
+              <Image
+                src="/images/hero-community-walk.png"
+                alt="Komunitas Berjalan Bersama Walk Impact 2026"
+                width={1536}
+                height={1024}
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="w-full h-auto object-contain"
+                priority
+              />
 
               {/* Floating Impact Badge */}
               <div className="absolute -bottom-4 -left-3 sm:-left-6 bg-white text-brand-text-dark px-4 py-2.5 rounded-xl shadow-xl border border-brand-light-gray flex items-center gap-3 animate-fade-up">
