@@ -89,6 +89,7 @@ function buildEmailHtml(opts: {
   venueName: string
   rpcLocationNote: string | null
   ticketUrl: string
+  scanUrl: string
   tpl: EmailTemplateContent
 }): string {
   const {
@@ -103,6 +104,7 @@ function buildEmailHtml(opts: {
     venueName,
     rpcLocationNote,
     ticketUrl,
+    scanUrl,
     tpl,
   } = opts
 
@@ -170,6 +172,33 @@ function buildEmailHtml(opts: {
           <p style="margin:0 0 24px;font-size:14px;color:#444;">&#x1F4F2; ${tpl.jersey_contact}</p>
 
           <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.6;">${tpl.cta_note}</p>
+
+          <!-- QR Code Tiket -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr>
+              <td align="center">
+                <table cellpadding="0" cellspacing="0" style="background:#f0f9e8;border:2px solid #c5e5a0;border-radius:12px;padding:20px;">
+                  <tr>
+                    <td align="center">
+                      <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#2e7d00;text-transform:uppercase;letter-spacing:0.5px;">
+                        &#x1F4F1; Scan QR untuk melihat tiket &amp; nomor BIB
+                      </p>
+                      <img
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&amp;color=1A2714&amp;bgcolor=FFFFFF&amp;data=${encodeURIComponent(scanUrl)}"
+                        alt="QR Tiket"
+                        width="180"
+                        height="180"
+                        style="border-radius:8px;border:3px solid #4caf22;display:block;"
+                      />
+                      <p style="margin:10px 0 0;font-size:11px;color:#6b7280;">
+                        Tunjukkan atau scan QR ini saat pengambilan jersey
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
 
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -269,6 +298,7 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.lazdarulhikam.or.id'
   const ticketUrl = `${baseUrl}/api/registrations/${registrationNumber}/ticket`
+  const scanUrl = `${baseUrl}/tiket/${registrationNumber}`
 
   const { content: rawTpl, templateId } = await resolveEmailTemplate('EMAIL_INVOICE_SUCCESS', SUCCESS_DEFAULTS)
 
@@ -304,6 +334,7 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
     venueName: event.venue_name,
     rpcLocationNote: event.rpc_location_note,
     ticketUrl,
+    scanUrl,
     tpl,
   })
 
