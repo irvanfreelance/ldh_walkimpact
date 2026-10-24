@@ -8,6 +8,7 @@ import {
   RegistrationDetail,
 } from '@/lib/db/queries/registrations'
 import { getActiveEvent } from '@/lib/db/queries/events'
+import { getPaymentMethods } from '@/lib/db/queries/payments'
 import { ConfirmationHero } from '@/components/confirmation/ConfirmationHero'
 import { RegistrationCard } from '@/components/confirmation/RegistrationCard'
 import { PaymentInstructionsCard } from '@/components/confirmation/PaymentInstructionsCard'
@@ -106,6 +107,23 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
   }
 
   const currentRegistration: RegistrationDetail = registration
+
+  // Look up account number from payment_methods DB for manual transfers
+  let paymentMethodAccountNumber: string | null = null
+  let paymentMethodAccountHolder: string | null = null
+  if (currentRegistration.status !== 'paid' && currentRegistration.payment_method_code) {
+    try {
+      const allMethods = await getPaymentMethods()
+      const matchedMethod = allMethods.find(
+        (m) => m.code === currentRegistration.payment_method_code
+      )
+      if (matchedMethod) {
+        paymentMethodAccountNumber = matchedMethod.account_number ?? null
+        paymentMethodAccountHolder = matchedMethod.account_holder ?? null
+      }
+    } catch {}
+  }
+
   const shareUrl = buildWhatsAppShareUrl(currentRegistration.registration_number, event)
 
   return (
@@ -186,6 +204,8 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
             billKey={currentRegistration.bill_key}
             qrUrl={currentRegistration.qr_url}
             paymentUrl={currentRegistration.payment_url}
+            accountNumber={paymentMethodAccountNumber}
+            accountHolder={paymentMethodAccountHolder}
           />
         )}
 

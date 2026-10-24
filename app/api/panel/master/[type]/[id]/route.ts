@@ -51,7 +51,7 @@ export async function PUT(
       `
       updated = res[0]
     } else if (type === 'payment-methods') {
-      const { code, name, logo_url, provider, type: payType, admin_fee_flat, is_active, sort_order } = body
+      const { code, name, logo_url, provider, type: payType, admin_fee_flat, is_active, sort_order, account_number, account_holder } = body
       const res = await sql`
         UPDATE payment_methods
         SET
@@ -62,7 +62,9 @@ export async function PUT(
           type = COALESCE(${payType}, type),
           admin_fee_flat = CASE WHEN ${admin_fee_flat !== undefined} THEN ${parseInt(admin_fee_flat, 10)} ELSE admin_fee_flat END,
           is_active = CASE WHEN ${is_active !== undefined} THEN ${is_active} ELSE is_active END,
-          sort_order = CASE WHEN ${sort_order !== undefined} THEN ${parseInt(sort_order, 10)} ELSE sort_order END
+          sort_order = CASE WHEN ${sort_order !== undefined} THEN ${parseInt(sort_order, 10)} ELSE sort_order END,
+          account_number = CASE WHEN ${account_number !== undefined} THEN ${account_number || null} ELSE account_number END,
+          account_holder = CASE WHEN ${account_holder !== undefined} THEN ${account_holder || null} ELSE account_holder END
         WHERE id = ${itemId}
         RETURNING *
       `

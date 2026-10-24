@@ -17,6 +17,8 @@ interface PaymentInstructionsCardProps {
   billKey?: string | null
   qrUrl?: string | null
   paymentUrl?: string | null
+  accountNumber?: string | null
+  accountHolder?: string | null
 }
 
 export function PaymentInstructionsCard({
@@ -32,6 +34,8 @@ export function PaymentInstructionsCard({
   billKey,
   qrUrl,
   paymentUrl,
+  accountNumber,
+  accountHolder,
 }: PaymentInstructionsCardProps) {
   const [copiedVa, setCopiedVa] = useState(false)
   const [copiedAmount, setCopiedAmount] = useState(false)
@@ -66,8 +70,8 @@ export function PaymentInstructionsCard({
   const manualBankName =
     bank || (codeUpper.includes('BCA') ? 'Bank BCA' : codeUpper.includes('MANDIRI') ? 'Bank Mandiri' : 'Bank Transfer')
   const manualAccountNumber =
-    vaNumber || (codeUpper.includes('BCA') ? '00804000200' : '1300077099011')
-  const manualAccountHolder = 'LAZ Darul Hikam'
+    accountNumber || vaNumber || (codeUpper.includes('BCA') ? '00804000200' : '1300077099011')
+  const manualAccountHolder = accountHolder || 'LAZ Darul Hikam'
 
   const isQris =
     !isManual &&

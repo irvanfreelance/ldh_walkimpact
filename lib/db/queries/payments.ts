@@ -13,6 +13,8 @@ export interface PaymentMethod {
   is_active: boolean
   is_redirect: boolean
   sort_order: number
+  account_number: string | null
+  account_holder: string | null
 }
 
 export interface PaymentInstruction {
@@ -40,7 +42,7 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   }
 
   const rows = await sql`
-    SELECT id, code, name, logo_url, type, provider, admin_fee_flat, admin_fee_pct, is_active, is_redirect, sort_order
+    SELECT id, code, name, logo_url, type, provider, admin_fee_flat, admin_fee_pct, is_active, is_redirect, sort_order, account_number, account_holder
     FROM payment_methods
     WHERE is_active = TRUE
     ORDER BY sort_order ASC

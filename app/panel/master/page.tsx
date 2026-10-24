@@ -79,6 +79,8 @@ export default function MasterDataPage() {
         admin_fee_flat: 0,
         is_active: true,
         sort_order: data.length + 1,
+        account_number: '',
+        account_holder: '',
       })
     }
     setIsModalOpen(true)
@@ -573,6 +575,35 @@ export default function MasterDataPage() {
                       />
                     </div>
                   </div>
+                  {(form.provider === 'Manual' || form.type === 'bank_transfer' || form.type === 'manual_transfer') && (
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+                      <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">Info Rekening Bank (Transfer Manual)</p>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                          Nomor Rekening
+                        </label>
+                        <input
+                          type="text"
+                          value={form.account_number || ''}
+                          onChange={(e) => setForm({ ...form, account_number: e.target.value })}
+                          placeholder="e.g. 00804000200"
+                          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#6DC230] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                          Nama Pemilik Rekening
+                        </label>
+                        <input
+                          type="text"
+                          value={form.account_holder || ''}
+                          onChange={(e) => setForm({ ...form, account_holder: e.target.value })}
+                          placeholder="e.g. LAZ Darul Hikam"
+                          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#6DC230] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="pt-2">
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
                       <input

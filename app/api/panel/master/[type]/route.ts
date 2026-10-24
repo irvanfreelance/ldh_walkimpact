@@ -69,13 +69,13 @@ export async function POST(
       `
       inserted = res[0]
     } else if (type === 'payment-methods') {
-      const { code, name, logo_url = null, provider = 'Midtrans', type: payType = 'bank_transfer', admin_fee_flat = 0, is_active = true, sort_order = 0 } = body
+      const { code, name, logo_url = null, provider = 'Midtrans', type: payType = 'bank_transfer', admin_fee_flat = 0, is_active = true, sort_order = 0, account_number = null, account_holder = null } = body
       if (!code || !name) {
         return NextResponse.json({ error: 'Kode dan Nama metode pembayaran wajib diisi' }, { status: 400 })
       }
       const res = await sql`
-        INSERT INTO payment_methods (code, name, logo_url, provider, type, admin_fee_flat, is_active, sort_order)
-        VALUES (${code}, ${name}, ${logo_url || null}, ${provider}, ${payType}, ${parseInt(admin_fee_flat, 10) || 0}, ${is_active}, ${parseInt(sort_order, 10) || 0})
+        INSERT INTO payment_methods (code, name, logo_url, provider, type, admin_fee_flat, is_active, sort_order, account_number, account_holder)
+        VALUES (${code}, ${name}, ${logo_url || null}, ${provider}, ${payType}, ${parseInt(admin_fee_flat, 10) || 0}, ${is_active}, ${parseInt(sort_order, 10) || 0}, ${account_number || null}, ${account_holder || null})
         RETURNING *
       `
       inserted = res[0]
