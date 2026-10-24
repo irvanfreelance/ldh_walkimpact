@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import sql from '@/lib/db/client'
+import { uploadPublicImage } from '@/lib/storage/upload-image'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,9 +42,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Ukuran file maksimal 2MB.' }, { status: 400 })
     }
 
-    const bytes = await file.arrayBuffer()
-    const base64 = Buffer.from(bytes).toString('base64')
-    const logoUrl = `data:${file.type};base64,${base64}`
+    const logoUrl = await uploadPublicImage(file, {
+      folder: 'sponsors',
+      contentType: file.type,
+      name: name,
+    })
 
     const [row] = await sql`
       INSERT INTO sponsors (name, logo_url, role, display_order, is_active)

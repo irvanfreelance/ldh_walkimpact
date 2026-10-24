@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { getAllSiteSettings, setSiteSetting } from '@/lib/db/queries/settings'
+import { uploadPublicImage } from '@/lib/storage/upload-image'
 import { revalidatePath } from 'next/cache'
 
 export async function GET() {
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
       if (!allowed.includes(file.type)) {
         return NextResponse.json({ error: 'Format file tidak didukung' }, { status: 400 })
       }
-      const buffer = Buffer.from(await file.arrayBuffer())
-      value = `data:${file.type};base64,${buffer.toString('base64')}`
+      value = await uploadPublicImage(file, {
+        folder: 'settings',
+        contentType: file.type,
+        name: key,
+      })
     } else if (valueRaw) {
       value = valueRaw
     } else {
