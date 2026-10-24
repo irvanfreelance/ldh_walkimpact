@@ -53,6 +53,32 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
     }
   }
 
+  // Jika ada order_id tapi tidak ditemukan di DB → tampilkan not found
+  if (!registration && orderId && !isDemo) {
+    return (
+      <div className="min-h-screen bg-brand-off-white flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-card border border-brand-light-gray p-8 text-center max-w-sm w-full space-y-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+            <span className="text-3xl">❌</span>
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-brand-text-dark mb-1">Pendaftaran Tidak Ditemukan</h2>
+            <p className="text-sm text-brand-text-muted">
+              Nomor pendaftaran <strong className="font-mono text-brand-text-dark">{orderId}</strong> tidak ada dalam sistem atau sudah dihapus.
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-green text-white text-sm font-bold hover:bg-brand-green-leaf transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // Fallback demo data if order_id is simulated or not found in local test
   if (!registration) {
     registration = {

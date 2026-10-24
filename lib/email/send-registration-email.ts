@@ -296,7 +296,7 @@ export async function sendRegistrationSuccessEmail(registrationNumber: string): 
   } | undefined
   if (!event) return
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.lazdarulhikam.or.id'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.lazdarulhikam.com'
   const ticketUrl = `${baseUrl}/api/registrations/${registrationNumber}/ticket`
   const scanUrl = `${baseUrl}/tiket/${registrationNumber}`
 
@@ -629,7 +629,7 @@ export async function sendRegistrationPendingEmail(
   const event = eventRows[0] as { name: string } | undefined
   if (!event) return
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.lazdarulhikam.or.id'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://walkimpact.lazdarulhikam.com'
   const konfirmasiUrl = `${baseUrl}/konfirmasi?order_id=${registrationNumber}`
 
   // Merge DB payment data with any fresh paymentInfo passed from the caller
