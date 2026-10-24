@@ -14,9 +14,10 @@ export interface SponsorItem {
 interface NavbarProps {
   registrationClosed?: boolean
   sponsors?: SponsorItem[]
+  logoUrl?: string
 }
 
-export function Navbar({ registrationClosed = false, sponsors = [] }: NavbarProps) {
+export function Navbar({ registrationClosed = false, sponsors = [], logoUrl = '/images/logo-walk-impact.png' }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -26,12 +27,13 @@ export function Navbar({ registrationClosed = false, sponsors = [] }: NavbarProp
           {/* Left: Walk Impact Logo */}
           <Link href="/" className="flex items-center shrink-0">
             <Image
-              src="/images/logo-walk-impact.png"
+              src={logoUrl}
               alt="Walk Impact 2026"
               width={160}
               height={50}
               className="h-10 w-auto object-contain"
               priority
+              unoptimized={logoUrl.startsWith('data:')}
             />
           </Link>
 

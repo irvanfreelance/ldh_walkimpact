@@ -9,6 +9,7 @@ import {
 } from '@/lib/db/queries/registrations'
 import { getActiveEvent } from '@/lib/db/queries/events'
 import { getPaymentMethods } from '@/lib/db/queries/payments'
+import { getSiteSetting } from '@/lib/db/queries/settings'
 import { ConfirmationHero } from '@/components/confirmation/ConfirmationHero'
 import { RegistrationCard } from '@/components/confirmation/RegistrationCard'
 import { PaymentInstructionsCard } from '@/components/confirmation/PaymentInstructionsCard'
@@ -28,7 +29,8 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
   const isDemo = searchParams?.demo === 'true'
 
   let registration: RegistrationDetail | null = null
-  const event = await getActiveEvent()
+  const [event, logoUrl] = await Promise.all([getActiveEvent(), getSiteSetting('walk_impact_logo')])
+  const logoSrc = logoUrl || '/images/logo-walk-impact.png'
 
   if (orderId) {
     registration = await getRegistrationByNumber(orderId)
@@ -171,12 +173,13 @@ export default async function KonfirmasiPage(props: KonfirmasiPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
-              src="/images/logo-walk-impact.png"
+              src={logoSrc}
               alt="Walk Impact 2026"
               width={150}
               height={45}
               className="h-9 w-auto object-contain"
               priority
+              unoptimized={logoSrc.startsWith('data:')}
             />
           </Link>
 

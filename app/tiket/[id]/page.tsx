@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { getRegistrationByNumber } from '@/lib/db/queries/registrations'
 import { getActiveEvent } from '@/lib/db/queries/events'
+import { getSiteSetting } from '@/lib/db/queries/settings'
 import { formatEventDate } from '@/lib/utils/format'
 
 interface TiketPageProps {
@@ -10,10 +11,12 @@ interface TiketPageProps {
 
 export default async function TiketPage({ params }: TiketPageProps) {
   const { id } = await params
-  const [reg, event] = await Promise.all([
+  const [reg, event, logoUrl] = await Promise.all([
     getRegistrationByNumber(id),
     getActiveEvent(),
+    getSiteSetting('walk_impact_logo'),
   ])
+  const logoSrc = logoUrl || '/images/logo-walk-impact.png'
 
   // Not found
   if (!reg) {
@@ -56,11 +59,12 @@ export default async function TiketPage({ params }: TiketPageProps) {
           {/* Header */}
           <div className="bg-[#3A7D0A] px-6 py-5 text-center">
             <Image
-              src="/images/logo-walk-impact.png"
+              src={logoSrc}
               alt="Walk Impact"
               width={150}
               height={48}
               className="h-10 w-auto object-contain brightness-0 invert mx-auto mb-2"
+              unoptimized={logoSrc.startsWith('data:')}
             />
             <p className="text-white/80 text-xs font-semibold tracking-widest uppercase">
               {event?.name || 'Walk Impact 2026'}

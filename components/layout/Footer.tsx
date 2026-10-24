@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import sql from '@/lib/db/client'
+import { getSiteSetting } from '@/lib/db/queries/settings'
 
 async function getActiveSponsors() {
   try {
@@ -14,9 +15,13 @@ async function getActiveSponsors() {
 type SponsorRow = { id: number; name: string; logo_url: string; role: string }
 
 export async function Footer() {
-  const all = (await getActiveSponsors()) as SponsorRow[]
-  const penyelenggara = all.filter((s) => s.role === 'penyelenggara')
-  const pendukung = all.filter((s) => s.role === 'pendukung')
+  const [all, logoUrl] = await Promise.all([
+    getActiveSponsors() as Promise<SponsorRow[]>,
+    getSiteSetting('walk_impact_logo'),
+  ])
+  const logoSrc = logoUrl || '/images/logo-walk-impact.png'
+  const penyelenggara = (all as SponsorRow[]).filter((s) => s.role === 'penyelenggara')
+  const pendukung = (all as SponsorRow[]).filter((s) => s.role === 'pendukung')
   return (
     <footer className="bg-[#0F281E] text-white relative overflow-hidden border-t border-white/10">
       {/* Decorative dot pattern */}
@@ -28,11 +33,12 @@ export async function Footer() {
           <div>
             <div className="mb-4">
               <Image
-                src="/images/logo-walk-impact.png"
+                src={logoSrc}
                 alt="Walk Impact 2026"
                 width={180}
                 height={55}
                 className="h-10 w-auto object-contain brightness-0 invert"
+                unoptimized={logoSrc.startsWith('data:')}
               />
             </div>
             {penyelenggara.length > 0 && (

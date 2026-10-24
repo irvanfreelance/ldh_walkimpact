@@ -1,5 +1,6 @@
 import sql from '@/lib/db/client'
 import { Navbar } from './Navbar'
+import { getSiteSetting } from '@/lib/db/queries/settings'
 
 interface NavbarWrapperProps {
   registrationClosed?: boolean
@@ -14,6 +15,15 @@ async function getActiveSponsors() {
 }
 
 export async function NavbarWrapper({ registrationClosed }: NavbarWrapperProps) {
-  const sponsors = await getActiveSponsors()
-  return <Navbar registrationClosed={registrationClosed} sponsors={sponsors as any} />
+  const [sponsors, logoUrl] = await Promise.all([
+    getActiveSponsors(),
+    getSiteSetting('walk_impact_logo'),
+  ])
+  return (
+    <Navbar
+      registrationClosed={registrationClosed}
+      sponsors={sponsors as any}
+      logoUrl={logoUrl || '/images/logo-walk-impact.png'}
+    />
+  )
 }

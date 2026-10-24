@@ -19,6 +19,7 @@ import {
   Eye,
   EyeOff,
   Pencil,
+  Settings,
 } from 'lucide-react'
 
 // ─── Sponsor types ───────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ const defaultSponsorForm: SponsorForm = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MasterDataPage() {
-  const [activeTab, setActiveTab] = useState<'categories' | 'shirt-sizes' | 'payment-methods' | 'sponsors'>('categories')
+  const [activeTab, setActiveTab] = useState<'categories' | 'shirt-sizes' | 'payment-methods' | 'sponsors' | 'site-settings'>('categories')
 
   // Generic master data state (categories / shirt-sizes / payment-methods)
   const [data, setData] = useState<any[]>([])
@@ -72,6 +73,12 @@ export default function MasterDataPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Site settings state
+  const [siteLogoPreview, setSiteLogoPreview] = useState<string>('')
+  const [siteLogoFile, setSiteLogoFile] = useState<File | null>(null)
+  const [siteLogoSaving, setSiteLogoSaving] = useState(false)
+  const logoFileInputRef = useRef<HTMLInputElement>(null)
+
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
     message: '',
@@ -88,15 +95,57 @@ export default function MasterDataPage() {
     { id: 'shirt-sizes' as const, label: 'Ukuran Kaos', icon: Shirt },
     { id: 'payment-methods' as const, label: 'Metode Pembayaran', icon: CreditCard },
     { id: 'sponsors' as const, label: 'Sponsor', icon: Star },
+    { id: 'site-settings' as const, label: 'Pengaturan Situs', icon: Settings },
   ]
 
   useEffect(() => {
     if (activeTab === 'sponsors') {
       fetchSponsors()
+    } else if (activeTab === 'site-settings') {
+      fetchSiteSettings()
     } else {
       fetchMasterData(activeTab)
     }
   }, [activeTab])
+
+  const fetchSiteSettings = async () => {
+    try {
+      const res = await fetch('/api/panel/settings')
+      const data = await res.json()
+      if (data.walk_impact_logo) {
+        setSiteLogoPreview(data.walk_impact_logo)
+      }
+    } catch {
+      showToast('Gagal memuat pengaturan situs', 'error')
+    }
+  }
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setSiteLogoFile(file)
+    setSiteLogoPreview(URL.createObjectURL(file))
+  }
+
+  const handleSaveLogoSetting = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!siteLogoFile) { showToast('Pilih file logo terlebih dahulu', 'error'); return }
+    setSiteLogoSaving(true)
+    try {
+      const fd = new FormData()
+      fd.append('key', 'walk_impact_logo')
+      fd.append('file', siteLogoFile)
+      const res = await fetch('/api/panel/settings', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan logo')
+      showToast('Logo berhasil diperbarui! Refresh halaman untuk melihat perubahan.')
+      setSiteLogoFile(null)
+    } catch (err: any) {
+      showToast(err.message, 'error')
+    } finally {
+      setSiteLogoSaving(false)
+    }
+  }
 
   // ─── Generic CRUD ───────────────────────────────────────────────────────────
   const fetchMasterData = async (tab: string) => {
@@ -308,13 +357,15 @@ export default function MasterDataPage() {
             Kelola kategori peserta, ukuran kaos, metode pembayaran, dan sponsor.
           </p>
         </div>
-        <button
-          onClick={activeTab === 'sponsors' ? openAddSponsor : openCreateModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] text-white text-sm font-bold shadow-xs transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{activeTab === 'sponsors' ? 'Tambah Sponsor' : 'Tambah Data'}</span>
-        </button>
+        {activeTab !== 'site-settings' && (
+          <button
+            onClick={activeTab === 'sponsors' ? openAddSponsor : openCreateModal}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] text-white text-sm font-bold shadow-xs transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{activeTab === 'sponsors' ? 'Tambah Sponsor' : 'Tambah Data'}</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -430,8 +481,65 @@ export default function MasterDataPage() {
         </div>
       )}
 
+      {/* ── Site Settings Tab ─────────────────────────────────────────────────── */}
+      {activeTab === 'site-settings' && (
+        <div className="bg-white rounded-2xl border border-[#E2E8DF] shadow-xs p-6 max-w-lg space-y-5">
+          <div>
+            <h3 className="text-base font-bold text-[#1A2714] mb-1">Logo Walk Impact</h3>
+            <p className="text-sm text-[#5A6E51]">Upload logo baru untuk mengganti logo yang tampil di navbar, footer, halaman tiket, dan halaman pendaftaran.</p>
+          </div>
+
+          {siteLogoPreview && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-[#4A5D40] uppercase tracking-wide">Preview Logo Saat Ini</p>
+              <div className="w-48 h-16 bg-[#F0F4ED] rounded-xl flex items-center justify-center overflow-hidden border border-[#E2E8DF]">
+                <img src={siteLogoPreview} alt="Logo preview" className="w-full h-full object-contain p-3" />
+              </div>
+              <div className="w-48 h-14 bg-[#1A2714] rounded-xl flex items-center justify-center overflow-hidden">
+                <img src={siteLogoPreview} alt="Logo on dark" className="w-full h-full object-contain p-3 brightness-0 invert" style={{ filter: 'brightness(0) invert(1)' }} />
+              </div>
+              <p className="text-[11px] text-[#7D9173]">Tampilan di latar terang (atas) dan latar gelap/footer (bawah)</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveLogoSetting} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#4A5D40] mb-1.5">Upload Logo Baru</label>
+              {siteLogoFile && (
+                <p className="text-xs text-[#3A7D0A] font-semibold mb-2">✓ {siteLogoFile.name}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => logoFileInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 border border-dashed border-[#B5C9AD] rounded-xl text-sm text-[#5A6E51] hover:border-[#3A7D0A] hover:text-[#3A7D0A] transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                {siteLogoFile ? 'Ganti File' : 'Pilih File Logo'}
+              </button>
+              <input
+                ref={logoFileInputRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp,.svg"
+                className="hidden"
+                onChange={handleLogoFileChange}
+              />
+              <p className="text-[11px] text-[#7D9173] mt-1">PNG, JPG, WEBP, atau SVG. Maks 2MB. Disarankan format transparent PNG.</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={siteLogoSaving || !siteLogoFile}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6DC230] hover:bg-[#5EAA28] disabled:opacity-50 text-white text-sm font-bold transition-colors"
+            >
+              {siteLogoSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              {siteLogoSaving ? 'Menyimpan...' : 'Simpan Logo'}
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* ── Generic Master Data Table ─────────────────────────────────────────── */}
-      {activeTab !== 'sponsors' && (
+      {activeTab !== 'sponsors' && activeTab !== 'site-settings' && (
         <div className="bg-white rounded-2xl border border-[#E2E8DF] shadow-xs overflow-hidden">
           {loading ? (
             <div className="py-16 text-center text-gray-500">

@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/queries/events'
 import { getQuotaFromDB } from '@/lib/db/queries/quota'
 import { getPaymentMethods } from '@/lib/db/queries/payments'
+import { getSiteSetting } from '@/lib/db/queries/settings'
 import { getRegistrationWindowStatus } from '@/lib/utils/registration'
 import { RegistrationWizard } from '@/components/registration/RegistrationWizard'
 
@@ -56,13 +57,15 @@ export default async function DaftarPage() {
     )
   }
 
-  const [categories, shirtSizes, ticketTier, quota, paymentMethods] = await Promise.all([
+  const [categories, shirtSizes, ticketTier, quota, paymentMethods, logoUrl] = await Promise.all([
     getParticipantCategories(),
     getShirtSizes(),
     getActiveTicketTier(event.id),
     getQuotaFromDB(event.id),
     getPaymentMethods(),
+    getSiteSetting('walk_impact_logo'),
   ])
+  const logoSrc = logoUrl || '/images/logo-walk-impact.png'
 
   return (
     <div className="min-h-screen bg-brand-off-white flex flex-col">
@@ -71,12 +74,13 @@ export default async function DaftarPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center">
             <Image
-              src="/images/logo-walk-impact.png"
+              src={logoSrc}
               alt="Walk Impact 2026"
               width={150}
               height={45}
               className="h-9 w-auto object-contain"
               priority
+              unoptimized={logoSrc.startsWith('data:')}
             />
           </Link>
 
